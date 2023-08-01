@@ -1,10 +1,14 @@
 import { Configuration, OpenAIApi } from "openai";
 
+const finetuned_model = "curie:ft-personal-2023-07-22-05-09-15";
+
 const configuration = new Configuration({
   //apiKey: process.env.OPENAI_API_KEY,
-  apiKey: "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"
+  apiKey: "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"
 });
 const openai = new OpenAIApi(configuration);
+
+let history = [];
 
 export default async function (req, res) {
   if (!configuration.apiKey) {
@@ -16,8 +20,8 @@ export default async function (req, res) {
     return;
   }
 
-  const animal = req.body.animal || '';
-  if (animal.trim().length === 0) {
+  const userInput = req.body.message || '';
+  if (userInput.length === 0) {
     res.status(400).json({
       error: {
         message: "Please enter a valid animal",
@@ -28,10 +32,14 @@ export default async function (req, res) {
 
   try {
     const completion = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt: generatePrompt(animal),
-      temperature: 0.6,
+      model: finetuned_model,
+      prompt: generatePrompt(userInput),
+      max_tokens: 50,
+      stop: "\n",
+      temperature: 0.5,
     });
+    history.push(userInput + "\n" + completion.data.choices[0].text + "\n")
+    console.log(history)
     res.status(200).json({ result: completion.data.choices[0].text });
   } catch(error) {
     // Consider adjusting the error handling logic for your use case
@@ -49,15 +57,12 @@ export default async function (req, res) {
   }
 }
 
-function generatePrompt(animal) {
-  const capitalizedAnimal =
-    animal[0].toUpperCase() + animal.slice(1).toLowerCase();
-  return `Suggest three names for an animal that is a superhero.
-
-Animal: Cat
-Names: Captain Sharpclaw, Agent Fluffball, The Incredible Feline
-Animal: Dog
-Names: Ruff the Protector, Wonder Canine, Sir Barks-a-Lot
-Animal: ${capitalizedAnimal}
-Names:`;
+function generatePrompt(input) {
+  let previous = "";
+  if (history.length > 3) {
+    previous = history.slice(-3).join("")
+  } else {
+    previous = history.join("")
+  }
+  return `${previous} + ${input} ->`
 }
