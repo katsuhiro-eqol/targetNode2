@@ -3,8 +3,7 @@ import { Configuration, OpenAIApi } from "openai";
 const finetuned_model = "curie:ft-personal-2023-07-22-05-09-15";
 
 const configuration = new Configuration({
-  //apiKey: process.env.OPENAI_API_KEY,
-  apiKey: "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"
+  apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
