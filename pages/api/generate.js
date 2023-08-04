@@ -1,13 +1,11 @@
 import { Configuration, OpenAIApi } from "openai";
 
-const finetuned_model = "curie:ft-personal-2023-07-22-05-09-15";
+const finetuned_model = "curie:ft-personal-2023-08-03-08-56-06";//20230803
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
-
-let history = [];
 
 export default async function (req, res) {
   if (!configuration.apiKey) {
@@ -23,7 +21,7 @@ export default async function (req, res) {
   if (userInput.length === 0) {
     res.status(400).json({
       error: {
-        message: "Please enter a valid animal",
+        message: "Please enter message",
       }
     });
     return;
@@ -37,8 +35,6 @@ export default async function (req, res) {
       stop: "\n",
       temperature: 0.5,
     });
-    history.push(userInput + "\n" + completion.data.choices[0].text + "\n")
-    console.log(history)
     res.status(200).json({ result: completion.data.choices[0].text });
   } catch(error) {
     // Consider adjusting the error handling logic for your use case
@@ -57,11 +53,5 @@ export default async function (req, res) {
 }
 
 function generatePrompt(input) {
-  let previous = "";
-  if (history.length > 3) {
-    previous = history.slice(-3).join("")
-  } else {
-    previous = history.join("")
-  }
-  return `${previous} + ${input} ->`
+  return `${input} ->`
 }
