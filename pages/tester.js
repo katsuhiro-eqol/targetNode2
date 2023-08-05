@@ -1,11 +1,15 @@
 import Head from "next/head";
 import { useState } from "react";
 import styles from "./index.module.css";
+import { db } from "../lib/FirebaseConfig";
+import { doc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 
-export default function Home() {
+export default function Tester() {
   const [userInput, setUserInput] = useState("");
   const [result, setResult] = useState();
   const [history, setHistory] = useState([]);
+  const [prompt, setPrompt] = useState("");
+  const [evaluation, setEvaluation] = useState("");
   const [conversation, setConversation] = useState("");
 
   async function onSubmit(event) {
@@ -24,12 +28,14 @@ export default function Home() {
         throw data.error || new Error(`Request failed with status ${response.status}`);
       }
 
+      setPrompt(data.prompt)
       setResult(data.result);
       const updates = history
       updates.push(userInput + "\n" + data.result + "\n")
       setHistory(updates);
       console.log(history);
       setUserInput("");
+      setEvaluation("");
     } catch(error) {
       // Consider implementing your own error handling logic here
       console.error(error);
@@ -37,11 +43,31 @@ export default function Home() {
     }
   }
 
+  const goodButton = () => {
+    const data = 
+        {prompt: prompt,
+        completion: result,
+        evaluation: "good"}
+    
+    const testRef = doc(db,"Instruction", "taget_tester")
+    updateDoc(testRef, {test: arrayUnion(data)})
+    setEvaluation("Good");
+  }
+  const badButton = () => {
+    const data = 
+        {prompt: prompt,
+        completion: result,
+        evaluation: "bad"}
+    
+    const testRef = doc(db,"Instruction", "taget_tester")
+    updateDoc(testRef, {test: arrayUnion(data)})
+    setEvaluation("Bad");
+  }
+
   return (
     <div>
       <Head>
-        <title>OpenAI Quickstart</title>
-        <link rel="icon" href="/dog.png" />
+        <title>target</title>
       </Head>
 
       <main className={styles.main}>
@@ -56,8 +82,18 @@ export default function Home() {
           />
           <input type="submit" value="伝える" />
         </form>
+        <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
       </main>
+      <div>
+      <br/>
+      <br/>
+        <button className={styles.button1} onClick={goodButton}>good</button>
+        <button className={styles.button2} onClick={badButton}>bad</button>
+      </div>
+      <main className={styles.main}>
+        <div className={styles.evaluation}>{evaluation}</div>
+        </main>
     </div>
   );
 }

@@ -39,7 +39,7 @@
 .main form {
   display: flex;
   flex-direction: column;
-  width: 320px;
+  width: 480px;
 }
 .main input[type="text"] {
   padding: 12px 16px;
@@ -64,4 +64,22 @@
 .main .result {
   font-weight: bold;
   margin-top: 40px;
+}
+.main .evaluation {
+  font-weight: bold;
+  margin-top: 40px;
+  font-size: 24px;
+}
+.main .good {
+  font-weight: bold;
+  margin-top: 40px;
+  color: blue;
+}
+.button1 {
+  margin-left: 35%;
+  color: blue;
+}
+.button2 {
+  margin-left: 25%;
+  color: red;
 }

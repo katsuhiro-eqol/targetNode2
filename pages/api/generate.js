@@ -1,6 +1,6 @@
 import { Configuration, OpenAIApi } from "openai";
 
-const finetuned_model = "curie:ft-personal-2023-08-03-08-56-06";//20230803
+const finetuned_model = "ada:ft-personal-2023-08-04-12-11-49";//20230804
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -31,11 +31,11 @@ export default async function (req, res) {
     const completion = await openai.createCompletion({
       model: finetuned_model,
       prompt: generatePrompt(userInput),
-      max_tokens: 50,
+      max_tokens: 80,
       stop: "\n",
-      temperature: 0.5,
+      temperature: 0.4,
     });
-    res.status(200).json({ result: completion.data.choices[0].text });
+    res.status(200).json({ prompt: userInput, result: completion.data.choices[0].text });
   } catch(error) {
     // Consider adjusting the error handling logic for your use case
     if (error.response) {
