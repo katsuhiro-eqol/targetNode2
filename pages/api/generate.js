@@ -1,6 +1,6 @@
 import { Configuration, OpenAIApi } from "openai";
 
-const finetuned_model = "ada:ft-personal-2023-08-04-12-11-49";//20230804
+const finetuned_model = "curie:ft-personal-2023-08-05-06-28-46";//20230804
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
