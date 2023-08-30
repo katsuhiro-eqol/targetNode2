@@ -1,17 +1,19 @@
 import Head from "next/head";
 import { useState } from "react";
+import useSound from 'use-sound';
 import styles from "./index.module.css";
 
 export default function Home() {
   const [userInput, setUserInput] = useState("");
   const [result, setResult] = useState();
-  const [history, setHistory] = useState([]);
-  const [conversation, setConversation] = useState("");
+
+  const wavfile = "gs://targetproject-394500.appspot.com/development/gen_file_2.wav"
+  const [play] = useSound(wavfile);
 
   async function onSubmit(event) {
     event.preventDefault();
     try {
-      const response = await fetch("/api/generate", {
+      const response = await fetch("/api/generate2", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -24,11 +26,7 @@ export default function Home() {
         throw data.error || new Error(`Request failed with status ${response.status}`);
       }
 
-      setResult(data.result);
-      const updates = history
-      updates.push(userInput + "\n" + data.result + "\n")
-      setHistory(updates);
-      console.log(history);
+      setResult(data.speech);
       setUserInput("");
     } catch(error) {
       // Consider implementing your own error handling logic here
@@ -57,6 +55,7 @@ export default function Home() {
           <input type="submit" value="伝える" />
         </form>
         <div className={styles.result}>{result}</div>
+        <button onClick={play}>speak!!</button>
       </main>
     </div>
   );
