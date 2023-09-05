@@ -2,7 +2,7 @@ import Head from "next/head";
 import { useState } from "react";
 import styles from "./index.module.css";
 import { db } from "../lib/FirebaseConfig";
-import { doc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, setDoc, updateDoc, arrayUnion,Timestamp } from "firebase/firestore";
 
 export default function Tester() {
   const [userInput, setUserInput] = useState("");
@@ -10,7 +10,12 @@ export default function Tester() {
   const [history, setHistory] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [evaluation, setEvaluation] = useState("");
-  const [conversation, setConversation] = useState("");
+  const [character, setCharacter] = useState("setto")
+  const characters = ["setto", "silva"];
+
+  const timestamp = Timestamp.now();
+  const today = timestamp.toDate();
+  console.log(today);
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -20,7 +25,7 @@ export default function Tester() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: userInput }),
+        body: JSON.stringify({ message: userInput, character: character }),
       });
 
       const data = await response.json();
@@ -45,23 +50,35 @@ export default function Tester() {
 
   const goodButton = () => {
     const data = 
-        {prompt: prompt,
+        {character: character,
+        date: today,
+        tester: "Target",
+        prompt: prompt,
         completion: result,
         evaluation: "good"}
     
-    const testRef = doc(db,"Instruction", "taget_tester")
-    updateDoc(testRef, {test: arrayUnion(data)})
+    const evaluationRef = doc(db,"Instruction", "taget_tester")
+    updateDoc(evaluationRef, {evaluation: arrayUnion(data)})
     setEvaluation("Good");
   }
+
   const badButton = () => {
     const data = 
-        {prompt: prompt,
+        {character: character,
+        date: today,
+        tester: "Target",
+        prompt: prompt,
         completion: result,
         evaluation: "bad"}
     
-    const testRef = doc(db,"Instruction", "taget_tester")
-    updateDoc(testRef, {test: arrayUnion(data)})
-    setEvaluation("Bad");
+      const evaluationRef = doc(db,"Instruction", "taget_tester")
+      updateDoc(evaluationRef, {evaluation: arrayUnion(data)})
+      setEvaluation("Bad");
+    }
+
+  const selectCharacter = (e) => {
+    setCharacter(e.target.value);
+    console.log(e.target.value);
   }
 
   return (
@@ -71,7 +88,13 @@ export default function Tester() {
       </Head>
 
       <main className={styles.main}>
-        <h3>セット・ノーディンに話しかけてみよう</h3>
+        <select value={character} label="character" onChange={selectCharacter}>
+          {characters.map((name) => {
+            return <option key={name} value={name}>{name}</option>;
+          })}
+        </select>
+
+        <h4>{character}と話そう</h4>
         <form onSubmit={onSubmit}>
           <input
             type="text"

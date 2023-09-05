@@ -1,16 +1,23 @@
 import Head from "next/head";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { storage } from "../lib/FirebaseConfig";
+import { ref, getDownloadURL } from "firebase/storage";
 import useSound from 'use-sound';
 import styles from "./index.module.css";
 
 export default function Home() {
+  const [character, setCharacter] = useState("setto");
   const [userInput, setUserInput] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState();
-
-  const wavfile = "gs://targetproject-394500.appspot.com/development/gen_file_2.wav"
-  const [play] = useSound(wavfile);
+  const [wavUrl, setWavUrl] = useState("");
+  const [wavReady, setwavReady] = useState(false)
+  const wavRef = useRef("")
 
   async function onSubmit(event) {
+    setwavReady(false)
+    setPrompt("")
+    setResult("")
     event.preventDefault();
     try {
       const response = await fetch("/api/generate2", {
@@ -18,22 +25,33 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: userInput }),
+        body: JSON.stringify({ message: userInput, character: character }),
       });
 
       const data = await response.json();
       if (response.status !== 200) {
         throw data.error || new Error(`Request failed with status ${response.status}`);
       }
-
-      setResult(data.speech);
+      setwavReady(true)
+      setWavUrl(data.wav);
+      wavRef.current = data.wav
+      setPrompt(data.prompt)
+      setResult(data.result);
       setUserInput("");
+      //play(data.wav)
     } catch(error) {
       // Consider implementing your own error handling logic here
       console.error(error);
       alert(error.message);
     }
   }
+
+  const [play] = useSound(wavRef.current);
+
+  useEffect(() => {
+    console.log(wavRef.current)
+    //play(wavRef.current)
+  }, [wavUrl])
 
   return (
     <div>
@@ -54,8 +72,12 @@ export default function Home() {
           />
           <input type="submit" value="伝える" />
         </form>
+        <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
-        <button onClick={play}>speak!!</button>
+        <br/>
+        <button onClick={() => {console.log("url:", wavRef.current); play(wavRef.current)}}>speak!!</button>
+        <br/>
+        <div className={styles.url}>{wavRef.current}</div>
       </main>
     </div>
   );

@@ -1,6 +1,8 @@
 import { Configuration, OpenAIApi } from "openai";
 
-const finetuned_model = "curie:ft-personal-2023-08-05-06-28-46";//20230804
+//const finetuned_model = "curie:ft-personal-2023-08-05-06-28-46";//20230804
+const finetuned_model = {setto:"curie:ft-personal-2023-08-05-06-28-46", silva:"curie:ft-personal-2023-09-04-03-05-21"}
+//20230904
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -18,6 +20,8 @@ export default async function (req, res) {
   }
 
   const userInput = req.body.message || '';
+  const character = req.body.character;
+
   if (userInput.length === 0) {
     res.status(400).json({
       error: {
@@ -29,7 +33,7 @@ export default async function (req, res) {
 
   try {
     const completion = await openai.createCompletion({
-      model: finetuned_model,
+      model: finetuned_model[character],
       prompt: generatePrompt(userInput),
       max_tokens: 80,
       stop: "\n",

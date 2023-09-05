@@ -29,9 +29,21 @@
 .main .icon {
   width: 34px;
 }
+.main select {
+  width: 128px;
+  font-size: 24px;
+  text-align: center;
+}
 .main h3 {
   font-size: 32px;
   line-height: 40px;
+  font-weight: bold;
+  color: #202123;
+  margin: 16px 0 40px;
+}
+.main h4 {
+  font-size: 28px;
+  line-height: 32px;
   font-weight: bold;
   color: #202123;
   margin: 16px 0 40px;
@@ -69,6 +81,10 @@
   font-weight: bold;
   margin-top: 40px;
   font-size: 24px;
+}
+.main .url {
+  margin-top: 40px;
+  font-size: 8px;
 }
 .main .good {
   font-weight: bold;
