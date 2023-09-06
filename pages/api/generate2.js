@@ -44,6 +44,7 @@ export default async function (req, res) {
     });
     //completion
     const resultString = completion.data.choices[0].text.trim()
+
     //resultStringをsha512でハッシュ化
     const hashString = md5(resultString)
     const wavfile = hashString
@@ -69,6 +70,7 @@ export default async function (req, res) {
       console.error(error);
     }
     //res.status(200).json({ prompt: userInput, result: completion.data.choices[0].text });
+
   } catch(error) {
     // Consider adjusting the error handling logic for your use case
     if (error.response) {

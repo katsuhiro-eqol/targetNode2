@@ -56,8 +56,7 @@ export default function Home() {
   return (
     <div>
       <Head>
-        <title>OpenAI Quickstart</title>
-        <link rel="icon" href="/dog.png" />
+        <title>はめふらトーク</title>
       </Head>
 
       <main className={styles.main}>
@@ -70,10 +69,11 @@ export default function Home() {
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
           />
-          <input type="submit" value="伝える" />
+          <input disabled={true} type="submit" value="伝える" />
         </form>
         <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
+        <p>このページは現在使用できません</p>
         <br/>
         <button onClick={() => {console.log("url:", wavRef.current); play(wavRef.current)}}>speak!!</button>
         <br/>

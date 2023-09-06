@@ -6,12 +6,16 @@ import { doc, setDoc, updateDoc, arrayUnion,Timestamp } from "firebase/firestore
 
 export default function Tester() {
   const [userInput, setUserInput] = useState("");
-  const [result, setResult] = useState();
+  const [result, setResult] = useState("");
   const [history, setHistory] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [evaluation, setEvaluation] = useState("");
-  const [character, setCharacter] = useState("setto")
+  const [ideal, setIdeal] = useState("");
+  const [canRegistration, setCanRegistration] = useState(false);
+  const [character, setCharacter] = useState("setto");
+  const [tester, setTester] = useState("tester1@target")
   const characters = ["setto", "silva"];
+  const testers = ["tester1@target", "tester2@target", "tester3@target"]
 
   const timestamp = Timestamp.now();
   const today = timestamp.toDate();
@@ -40,7 +44,8 @@ export default function Tester() {
       setHistory(updates);
       console.log(history);
       setUserInput("");
-      setEvaluation("");
+      setEvaluation("good or bad ?");
+      setCanRegistration(false)
     } catch(error) {
       // Consider implementing your own error handling logic here
       console.error(error);
@@ -52,49 +57,67 @@ export default function Tester() {
     const data = 
         {character: character,
         date: today,
-        tester: "Target",
+        tester: tester,
         prompt: prompt,
         completion: result,
+        idealResponse: "",
         evaluation: "good"}
     
     const evaluationRef = doc(db,"Instruction", "taget_tester")
-    updateDoc(evaluationRef, {evaluation: arrayUnion(data)})
-    setEvaluation("Good");
+    updateDoc(evaluationRef, {evaluation1: arrayUnion(data)})
+    setEvaluation("Goodとして登録ずみ   -> next");
   }
 
   const badButton = () => {
+      setEvaluation("模範解答例を入力して登録してください");
+      setCanRegistration(true)
+    }
+
+  const idealResponseRegistration = () => {
     const data = 
         {character: character,
         date: today,
-        tester: "Target",
+        tester: tester,
         prompt: prompt,
         completion: result,
+        idealResponse: ideal,
         evaluation: "bad"}
     
       const evaluationRef = doc(db,"Instruction", "taget_tester")
-      updateDoc(evaluationRef, {evaluation: arrayUnion(data)})
-      setEvaluation("Bad");
-    }
+      updateDoc(evaluationRef, {evaluation1: arrayUnion(data)})
+      setCanRegistration(false)
+      setEvaluation("模範解答例登録済み  -> next")
+      setIdeal("")
+  }
 
   const selectCharacter = (e) => {
     setCharacter(e.target.value);
     console.log(e.target.value);
   }
 
+  const selectTester = (e) => {
+    setTester(e.target.value);
+    console.log(e.target.value);
+  }
   return (
     <div>
       <Head>
         <title>target</title>
       </Head>
-
+      <div>
+      <select className={styles.select1} value={character} label="character" onChange={selectCharacter}>
+        {characters.map((name) => {
+          return <option key={name} value={name}>{name}</option>;
+        })}
+      </select>
+      <select className={styles.select2} value={tester} label="tester" onChange={selectTester}>
+        {testers.map((name) => {
+          return <option key={name} value={name}>{name}</option>;
+        })}
+      </select>
+      </div>
       <main className={styles.main}>
-        <select value={character} label="character" onChange={selectCharacter}>
-          {characters.map((name) => {
-            return <option key={name} value={name}>{name}</option>;
-          })}
-        </select>
-
-        <h4>{character}と話そう</h4>
+        <h4>{character} / {tester}</h4>
         <form onSubmit={onSubmit}>
           <input
             type="text"
@@ -114,9 +137,17 @@ export default function Tester() {
         <button className={styles.button1} onClick={goodButton}>good</button>
         <button className={styles.button2} onClick={badButton}>bad</button>
       </div>
-      <main className={styles.main}>
+      <main className={styles.ex}>
         <div className={styles.evaluation}>{evaluation}</div>
-        </main>
+        <input
+            type="text"
+            name="idealResponse"
+            placeholder="理想回答を入力"
+            value={ideal}
+            onChange={(e) => setIdeal(e.target.value)}
+          />
+          <button disabled={!canRegistration} onClick={idealResponseRegistration}>登録</button>
+      </main>
     </div>
   );
 }
