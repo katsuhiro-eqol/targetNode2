@@ -142,7 +142,7 @@ export default function Tester() {
         <input
             type="text"
             name="idealResponse"
-            placeholder="理想回答を入力"
+            placeholder="模範解答例を入力"
             value={ideal}
             onChange={(e) => setIdeal(e.target.value)}
           />
