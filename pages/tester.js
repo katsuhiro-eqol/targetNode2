@@ -14,16 +14,20 @@ export default function Tester() {
   const [canRegistration, setCanRegistration] = useState(false);
   const [character, setCharacter] = useState("setto");
   const [tester, setTester] = useState("tester1@target")
+  const [start, setStart] = useState()
   const characters = ["setto", "silva"];
   const testers = ["tester1@target", "tester2@target", "tester3@target"]
 
   const timestamp = Timestamp.now();
   const today = timestamp.toDate();
-  console.log(today);
-
+  
   async function onSubmit(event) {
+    const now = new Date()
+    const time = now.getTime()
+    setStart(time)
     event.preventDefault();
     try {
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
@@ -37,6 +41,7 @@ export default function Tester() {
         throw data.error || new Error(`Request failed with status ${response.status}`);
       }
 
+      timeMeasurement()
       setPrompt(data.prompt)
       setResult(data.result);
       const updates = history
@@ -99,6 +104,16 @@ export default function Tester() {
     setTester(e.target.value);
     console.log(e.target.value);
   }
+
+  const timeMeasurement = () => {
+    const now = new Date()
+    const time = now.getTime()
+    const elapsed = time -start
+    console.log(start)
+    console.log(time)
+    console.log(elapsed)
+  }
+
   return (
     <div>
       <Head>

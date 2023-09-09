@@ -38,13 +38,15 @@ export default function Home() {
       setPrompt(data.prompt)
       setResult(data.result);
       setUserInput("");
-      //play(data.wav)
+
     } catch(error) {
       // Consider implementing your own error handling logic here
       console.error(error);
       alert(error.message);
     }
   }
+
+
 
   const [play] = useSound(wavRef.current);
 
@@ -75,7 +77,8 @@ export default function Home() {
         <div className={styles.result}>{result}</div>
         <p>このページは現在使用できません</p>
         <br/>
-        <button onClick={() => {console.log("url:", wavRef.current); play(wavRef.current)}}>speak!!</button>
+        <button onClick={play}>speak!!</button>
+        <button onClick={() => {play(wavRef.current)}}>speak</button>
         <br/>
         <div className={styles.url}>{wavRef.current}</div>
       </main>
