@@ -39,6 +39,8 @@ export default function Measure() {
     return file
   }
 
+  const [play] = useSound(wavRef.current)
+
   const dlFile = () => {
     const selected = selectFile()
     console.log(selected)
@@ -46,13 +48,13 @@ export default function Measure() {
     const pathRef = ref(storage, path);
     getDownloadURL(pathRef)
       .then((url) => {
-        console.log(url)
-        const [play] = useSound(url);
-        play(url)
+        wavRef.current = url
+        play(wavRef.current)
       })
       .catch((error) => {
         //エラー処理
       })
+      //play(wavRef.current)
   }
 
   async function onSubmit(event) {
@@ -133,7 +135,7 @@ export default function Measure() {
 
 
   //const [play] = useSound(wavRef.current);
-  const [play] = useSound(wavUrl);
+  //const [play] = useSound(wavUrl);
 
   /*
   useEffect(() => {
