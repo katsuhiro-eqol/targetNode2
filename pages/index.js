@@ -46,8 +46,6 @@ export default function Home() {
     }
   }
 
-
-
   const [play] = useSound(wavRef.current);
 
   useEffect(() => {
@@ -71,7 +69,7 @@ export default function Home() {
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
           />
-          <input disabled={false} type="submit" value="伝える" />
+          <input disabled={true} type="submit" value="伝える" />
         </form>
         <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
