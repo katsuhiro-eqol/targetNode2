@@ -4,7 +4,10 @@ import { ref, getDownloadURL } from "firebase/storage";
 import md5 from 'md5';
 import { Configuration, OpenAIApi } from "openai";
 
-const finetuned_model = "curie:ft-personal-2023-08-05-06-28-46";//20230804
+//index.js用generate.js
+const finetuned_model = {setto:"curie:ft-personal-2023-09-11-02-32-38", 
+silva:"curie:ft-personal-2023-09-11-03-00-50"}
+//const finetuned_model = "curie:ft-personal-2023-08-05-06-28-46";//20230804
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -14,6 +17,7 @@ const url = "http://54.70.243.84:5000" //espnet@aws
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 
 export default async function (req, res) {
+  const start = new Date().getTime()
   if (!configuration.apiKey) {
     res.status(500).json({
       error: {
@@ -36,7 +40,7 @@ export default async function (req, res) {
 
   try {
     const completion = await openai.createCompletion({
-      model: finetuned_model,
+      model: finetuned_model[character],
       prompt: generatePrompt(userInput),
       max_tokens: 80,
       stop: "\n",
@@ -48,7 +52,7 @@ export default async function (req, res) {
     //resultStringをsha512でハッシュ化
     const hashString = md5(resultString)
     const wavfile = hashString
-
+    const openaiTime = new Date().getTime() - start
     try {
       const query = url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character
       //responseは、CloudStorageの音声ファイル認証urlにする
@@ -59,7 +63,8 @@ export default async function (req, res) {
       getDownloadURL(currentRef)
       .then((url) => {
         console.log("wavUrl", url)
-        res.status(200).json({ prompt: userInput, result: resultString, wav: url});
+        const espnetTime = new Date().getTime() - start
+        res.status(200).json({ prompt: userInput, result: resultString, wav: url, openai: openaiTime, espnet: espnetTime});
       })
       .catch((error) => {
         res.status(200).json({ prompt: userInput, result: resultString, wav: error});

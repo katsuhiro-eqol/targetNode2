@@ -1,35 +1,64 @@
-import axios from 'axios';
-import { storage } from "../../lib/FirebaseConfig";
-import { ref, getDownloadURL } from "firebase/storage";
+import { Configuration, OpenAIApi } from "openai";
+
+//tester.js用
+const finetuned_model = {setto:"curie:ft-personal-2023-09-11-02-32-38", silva:"curie:ft-personal-2023-09-11-03-00-50"}
+//20230904
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
 
 export default async function (req, res) {
-  const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
-  const silent = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
-  const speech = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2F85602777dc2cbb2c4806cc5c5070b422.wav?alt=media&token=cce161c5-c0dd-468f-96a9-7fbf1660e434"
+  if (!configuration.apiKey) {
+    res.status(500).json({
+      error: {
+        message: "OpenAI API key not configured, please follow instructions in README.md",
+      }
+    });
+    return;
+  }
 
-  const onsei = ["https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2F85602777dc2cbb2c4806cc5c5070b422.wav?alt=media&token=cce161c5-c0dd-468f-96a9-7fbf1660e434",
-"https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2F683ebfeeee44051468a6afebb817b652.wav?alt=media&token=060dddf7-46b5-401c-bc25-02ce0d5efca9",
-"https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2F59cee8e548b7fb968316be3f271b2d52.wav?alt=media&token=fb5ffb1f-cb71-49be-aad8-e841c4345642"]
+  const userInput = req.body.message || '';
+  const character = req.body.character;
+  const fewShot = req.body.fewShot;
+  console.log("fewshot", fewShot)
 
-const userInput = req.body.message || '';
-const character = req.body.character;
-console.log(userInput)
-  const file = onsei[Math.floor(Math.random() * onsei.length)]
-  console.log(file)
-  res.status(200).json({ wav: file });
+  if (userInput.length === 0) {
+    res.status(400).json({
+      error: {
+        message: "Please enter message",
+      }
+    });
+    return;
+  }
+
+  try {
+    const completion = await openai.createCompletion({
+      model: finetuned_model[character],
+      prompt: generatePrompt(userInput, fewShot, character),
+      max_tokens: 80,
+      stop: "\n",
+      temperature: 0.4,
+    });
+    console.log(generatePrompt(userInput, fewShot))
+    res.status(200).json({ prompt: userInput, result: completion.data.choices[0].text });
+  } catch(error) {
+    // Consider adjusting the error handling logic for your use case
+    if (error.response) {
+      console.error(error.response.status, error.response.data);
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      console.error(`Error with OpenAI API request: ${error.message}`);
+      res.status(500).json({
+        error: {
+          message: 'An error occurred during your request.',
+        }
+      });
+    }
+  }
 }
 
-const listFiles = () => {
-  let files = []
-  const path = bucket_path + "setto"
-  const listRef = ref(storage, path);
-  listAll(listRef)
-  .then((res) => {
-    res.items.forEach((itemRef) => {
-      files.push(itemRef.name)
-    });
-    setWavFiles(files)
-  }).catch((error) => {
-    console.log(error)
-  });
+function generatePrompt(input, fewShot, character) {
+  return `${fewShot}${character}として事実に基づいて回答すること。${input} ->`
 }

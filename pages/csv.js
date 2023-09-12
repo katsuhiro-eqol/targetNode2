@@ -14,13 +14,13 @@ export default function Csv() {
 
     if (testSnap.exists()) {
         const data = testSnap.data()
-        const evaluation = data.evaluation
+        const evaluation = data.evaluation1
         let text = ""
         evaluation.map((item) => {
-            const j = item.character + "," + item.prompt + "," + item.completion + "," + item.evaluation + "," + item.tester + "," + item.date + "\n"
+            const j = item.character + "," + item.prompt + "," + item.completion + "," + item.evaluation + "," + item.idealResponse + "," + item.tester + "," + item.date + "\n"
             text += j
         })
-        const storageRef = ref(storage, "development/evaluationDL")
+        const storageRef = ref(storage, "development/evaluationDL20230911.csv")
         uploadString(storageRef, text).then((snapshot) => {
         console.log('Uploaded a raw string!');
         });

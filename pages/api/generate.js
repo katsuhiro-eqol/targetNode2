@@ -1,7 +1,7 @@
 import { Configuration, OpenAIApi } from "openai";
 
-//const finetuned_model = "curie:ft-personal-2023-08-05-06-28-46";//20230804
-const finetuned_model = {setto:"curie:ft-personal-2023-08-05-06-28-46", silva:"curie:ft-personal-2023-09-04-03-05-21"}
+//tester.js用
+const finetuned_model = {setto:"curie:ft-personal-2023-09-11-02-32-38", silva:"curie:ft-personal-2023-09-11-03-00-50"}
 //20230904
 
 const configuration = new Configuration({

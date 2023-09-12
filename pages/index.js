@@ -10,12 +10,14 @@ export default function Home() {
   const [userInput, setUserInput] = useState("");
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState();
-  const [wavUrl, setWavUrl] = useState("");
-  const [wavReady, setwavReady] = useState(false)
-  const wavRef = useRef("")
+  //wavUrl：cloud storageのダウンロードurl。初期値は無音ファイル。これを入れることによって次からセッティングされるwavUrlで音がなるようになる。
+  const [wavUrl, setWavUrl] = useState("https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a");
+  const [wavReady, setWavReady] = useState(false)
+  const [elapsedTime, setElapsedTime] = useState({total:0.0, openai:0.0, Espnet:0.0})
+  const characters = ["setto", "silva"];
 
   async function onSubmit(event) {
-    setwavReady(false)
+    const start = new Date().getTime()
     setPrompt("")
     setResult("")
     event.preventDefault();
@@ -32,13 +34,14 @@ export default function Home() {
       if (response.status !== 200) {
         throw data.error || new Error(`Request failed with status ${response.status}`);
       }
-      setwavReady(true)
       setWavUrl(data.wav);
-      wavRef.current = data.wav
       setPrompt(data.prompt)
       setResult(data.result);
       setUserInput("");
-
+      const totalTime = new Date().getTime() - start
+      const espnetTime = data.espnet - data.openai
+      const t = {total:totalTime, openai:data.openai, Espnet:espnetTime}
+      setElapsedTime(t)
     } catch(error) {
       // Consider implementing your own error handling logic here
       console.error(error);
@@ -46,11 +49,15 @@ export default function Home() {
     }
   }
 
-  const [play] = useSound(wavRef.current);
+  const selectCharacter = (e) => {
+    setCharacter(e.target.value);
+    console.log(e.target.value);
+  }
+
+  const [play] = useSound(wavUrl);
 
   useEffect(() => {
-    console.log(wavRef.current)
-    //play(wavRef.current)
+    console.log(wavUrl)
   }, [wavUrl])
 
   return (
@@ -58,9 +65,17 @@ export default function Home() {
       <Head>
         <title>はめふらトーク</title>
       </Head>
+      <div>
+      <select className={styles.select1} value={character} label="character" onChange={selectCharacter}>
+        {characters.map((name) => {
+          return <option key={name} value={name}>{name}</option>;
+        })}
+      </select>
+      </div>
 
       <main className={styles.main}>
-        <h3>セット・ノーディンに話しかけてみよう</h3>
+        <h3>{character}とトークしてみよう
+        </h3>
         <form onSubmit={onSubmit}>
           <input
             type="text"
@@ -69,16 +84,20 @@ export default function Home() {
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
           />
-          <input disabled={true} type="submit" value="伝える" />
+          <input disabled={!wavReady} type="submit" value="伝える" />
         </form>
         <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
-        <p>このページは現在使用できません</p>
         <br/>
-        <button onClick={play}>speak!!</button>
-        <button onClick={() => {play(wavRef.current)}}>speak</button>
+        {(wavReady) ? (<button onClick={() => play()}>speak!!</button>) : (
+          <button onClick={() => {setWavReady(true); play()}}>トークを始める</button>
+        )}
+        
         <br/>
-        <div className={styles.url}>{wavRef.current}</div>
+        <div>トータル所要時間: {elapsedTime.total}msec</div>
+        <div>openAI所要時間: {elapsedTime.openai}msec</div>
+        <div>espnet所要時間: {elapsedTime.Espnet}msec</div>
+        <div className={styles.none}>{wavUrl}</div>
       </main>
     </div>
   );
