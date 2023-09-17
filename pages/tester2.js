@@ -150,7 +150,6 @@ export default function Tester2() {
         setInfo(data)
     } else {
     // docSnap.data() will be undefined in this case
-    console.log("No such document!");
     }
   }
 
