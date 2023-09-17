@@ -15,8 +15,10 @@ export default function Tester2() {
   const [character, setCharacter] = useState("silva");
   const [tester, setTester] = useState("tester1@target")
   const [start, setStart] = useState()
-  const [items, setItems] = useState([])
-  const [info, setInfo] = useState({})
+  const [items, setItems] = useState([]) //固有名詞リスト
+  const [info, setInfo] = useState({}) //固有名詞情報
+  const [greetings, setGreetings] = useState([]) //定型QAリスト
+  const [gInfo, setGInfo] = useState({}) //定型QA情報
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
   const testers = ["tester1@target", "tester2@target", "tester3@target"]
@@ -29,50 +31,64 @@ export default function Tester2() {
     event.preventDefault();
     const now = new Date()
     const time = now.getTime()
-    let fewShot = "以下の設定に矛盾しないよう回答すること。設定："
-    items.map((item) => {
-        if (userInput.search(item) !==-1){
-            const t = item + "は" + info[item].join() + "。"
-            fewShot += t
-        }
-    })
-    selfwords.map((word) => {
-        if (userInput.search(word) !==-1){
-            const name = characterName[character]
-            const t = "あなたは" + info[name].join() + "。"
-            fewShot += t
-        }
-    })
-    console.log("fewShot:", fewShot)
 
-    try {
-      const response = await fetch("/api/generate3", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot }),
-      });
-
-      const data = await response.json();
-      if (response.status !== 200) {
-        throw data.error || new Error(`Request failed with status ${response.status}`);
+    //定型QAかどうかの判定のための準備
+    let preparedGreeting = {}
+    greetings.map((item) => {
+      if (userInput.search(item) !==-1){
+        const selected = gInfo[item]
+        preparedGreeting = selected[Math.floor(Math.random() * selected.length)]
       }
+    })
+    
+    if (Object.keys(preparedGreeting).length !== 0){
+        //応答が早すぎる
+        setPrompt(userInput)
+        setResult(preparedGreeting["output"])
+      } else {
+        let fewShot = "以下の設定に矛盾しないよう回答すること。設定："
+        items.map((item) => {
+            if (userInput.search(item) !==-1){
+                const t = item + "は" + info[item].join() + "。"
+                fewShot += t
+            }
+        })
+        selfwords.map((word) => {
+            if (userInput.search(word) !==-1){
+                const name = characterName[character]
+                const t = "あなたは" + info[name].join() + "。"
+                fewShot += t
+            }
+        })
+        try {
+          const response = await fetch("/api/generate3", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot }),
+          });
 
-      setPrompt(data.prompt)
-      setResult(data.result);
-      const updates = history
-      updates.push(userInput + "\n" + data.result + "\n")
-      setHistory(updates);
-      console.log(history);
-      setUserInput("");
-      setEvaluation("good, bad or incorrect ?");
-      setCanRegistration(false)
-    } catch(error) {
-      // Consider implementing your own error handling logic here
-      console.error(error);
-      alert(error.message);
-    }
+          const data = await response.json();
+          if (response.status !== 200) {
+            throw data.error || new Error(`Request failed with status ${response.status}`);
+          }
+    
+          setPrompt(data.prompt)
+          setResult(data.result);
+          const updates = history
+          updates.push(userInput + "\n" + data.result + "\n")
+          setHistory(updates);
+          console.log(history);
+          setUserInput("");
+          setEvaluation("good or bad ?");
+          setCanRegistration(false)
+        } catch(error) {
+          // Consider implementing your own error handling logic here
+          console.error(error);
+          alert(error.message);
+        }
+      }
   }
 
   const goodButton = () => {
@@ -140,7 +156,6 @@ export default function Tester2() {
   const originalInfo = async() => {
     const docRef = doc(db, "OriginalInformation", "hamefura");
     const docSnap = await getDoc(docRef);
-
     if (docSnap.exists()) {
         const data = docSnap.data()
         console.log("Document data:", data);
@@ -149,19 +164,43 @@ export default function Tester2() {
         setItems(items)
         setInfo(data)
     } else {
+    console.log("No such document!");
+    }
+  }
+
+  const greetingInfo = async() => {
+    const docRef = doc(db, "Greeting", character);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        const data = docSnap.data()
+        console.log("Document data:", data);
+        const g = Object.keys(data)
+        console.log("greetings:", g);
+        setGreetings(g)
+        setGInfo(data)
+    } else {
     // docSnap.data() will be undefined in this case
+    console.log("No such document!");
     }
   }
 
   useEffect(() => {
     originalInfo()
+    greetingInfo()
   },[])
+
+  useEffect(() => {
+    greetingInfo()
+  },[character])
   
   return (
     <div>
       <Head>
         <title>target</title>
       </Head>
+
+      <main className={styles.main}>
       <div>
       <select className={styles.select1} value={character} label="character" onChange={selectCharacter}>
         {characters.map((name) => {
@@ -174,7 +213,6 @@ export default function Tester2() {
         })}
       </select>
       </div>
-      <main className={styles.main}>
         <h4>{character} / {tester}</h4>
         <form onSubmit={onSubmit}>
           <input

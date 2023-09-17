@@ -13,13 +13,12 @@
   font-weight: bold;
   font-style: normal;
 }
-.select1 {
+.main .select1 {
   width: 200px;
   font-size: 20px;
   text-align: center;
-  margin-left: 35%;
 }
-.select2 {
+.main .select2 {
   width: 200px;
   font-size: 20px;
   text-align: center;

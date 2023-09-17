@@ -25,15 +25,14 @@ export default function Home() {
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
   const selfwords = ["貴方", "あなた", "君"]
-  const user = tester //登録情報より取得
+  const user = "tester" //登録情報より取得
 
   async function onSubmit(event) {
     event.preventDefault();
     const start = new Date().getTime()
     setPrompt(userInput)
     setResult("応答を待ってます・・・")
-    //定型QAかどうかの判定
-    console.log(greetings)
+    //定型QAかどうかの判定のための準備
     let preparedGreeting = {}
     greetings.map((item) => {
       if (userInput.search(item) !==-1){
