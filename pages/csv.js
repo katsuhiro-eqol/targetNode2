@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { db } from "../lib/FirebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { storage } from "../lib/FirebaseConfig";
@@ -7,6 +7,9 @@ import { ref, uploadString } from "firebase/storage";
 import styles from "./index.module.css";
 
 export default function Csv() {
+  const [csvFile, setCsvFile] = useState("")
+  const [character, setCharacter] = useState("")
+  const [systemContent, setSystemContent] = useState("")
    
   const csvdownload = async() => {
     const testRef = doc(db,"Instruction", "taget_tester")
@@ -36,7 +39,7 @@ export default function Csv() {
             <title>target</title>
         </Head>
         <main className={styles.main}>
-        <p>csvをダウンロード</p>
+        <h5>evaluationをcsvでダウンロード（csv.jsで詳細を指定すること）</h5>
         <button onClick={csvdownload}>csv download</button>
         </main>
         </>

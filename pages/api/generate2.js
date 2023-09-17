@@ -1,24 +1,25 @@
 import axios from 'axios';
-import { storage } from "../../lib/FirebaseConfig";
-import { ref, getDownloadURL } from "firebase/storage";
+import { storage, db } from "../../lib/FirebaseConfig";
+import { ref, getDownloadURL} from "firebase/storage";
+import { doc, getDoc } from "firebase/firestore";
 import md5 from 'md5';
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 
 //index.js用generate.js
-const finetuned_model = {setto:"curie:ft-personal-2023-09-11-02-32-38", 
-silva:"curie:ft-personal-2023-09-11-03-00-50"}
-//const finetuned_model = "curie:ft-personal-2023-08-05-06-28-46";//20230804
+const finetuned_model = {setto:"ft:gpt-3.5-turbo-0613:personal::7zayZD3r", 
+silva:"ft:gpt-3.5-turbo-0613:personal::7yhcFCbA"}
 
-const configuration = new Configuration({
+//openai@4.7.0での記載方法
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
+
 const url = "http://54.70.243.84:5000" //espnet@aws
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 
 export default async function (req, res) {
   const start = new Date().getTime()
-  if (!configuration.apiKey) {
+  if (!openai.apiKey) {
     res.status(500).json({
       error: {
         message: "OpenAI API key not configured, please follow instructions in README.md",
@@ -26,9 +27,10 @@ export default async function (req, res) {
     });
     return;
   }
-
-  const userInput = req.body.message || '';
+  const userInput = req.body.input || '';
   const character = req.body.character;
+  const fewShot = req.body.fewShot
+
   if (userInput.length === 0) {
     res.status(400).json({
       error: {
@@ -39,43 +41,50 @@ export default async function (req, res) {
   }
 
   try {
-    const completion = await openai.createCompletion({
+    const completion = await openai.chat.completions.create({
+      messages: generateMessages(userInput, fewShot),
       model: finetuned_model[character],
-      prompt: generatePrompt(userInput),
       max_tokens: 80,
       stop: "\n",
       temperature: 0.4,
     });
-    //completion
-    const resultString = completion.data.choices[0].text.trim()
-
+    const resultString = completion.choices[0].message.content.trim()
+    const openaiTime = new Date().getTime() - start
     //resultStringをsha512でハッシュ化
     const hashString = md5(resultString)
-    const wavfile = hashString
-    const openaiTime = new Date().getTime() - start
-    try {
-      const query = url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character
-      //responseは、CloudStorageの音声ファイル認証urlにする
-      const response = await axios.get(query);
-      //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
-      const currentWavPath = bucket_path + response.data;//urlを返すようにaws flask側を変更
-      const currentRef = ref(storage, currentWavPath)
-      getDownloadURL(currentRef)
-      .then((url) => {
-        console.log("wavUrl", url)
-        const espnetTime = new Date().getTime() - start
-        res.status(200).json({ prompt: userInput, result: resultString, wav: url, openai: openaiTime, espnet: espnetTime});
-      })
-      .catch((error) => {
-        res.status(200).json({ prompt: userInput, result: resultString, wav: error});
-      })
-      //res.status(200).json({ prompt: userInput, result: resultString, wav: wavDir});
-    } catch (error) {
-     // データ取得が失敗した場合
-      console.error(error);
-    }
-    //res.status(200).json({ prompt: userInput, result: completion.data.choices[0].text });
+    const id = character + "-" + hashString
 
+    //音声ファイルが存在するかどうか確認
+    const docRef = doc(db, "Speech", id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const url = docSnap.data().url
+      const repeat = docSnap.data().repeat + 1
+      //existingがtrueなのでindexでの保存処理なし
+      res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, openai: openaiTime, espnet: 0.0});
+    } else {
+      //音声ファイルが存在しないときのみespnet(aws)に送信
+      try {
+        const query = url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character
+        const response = await axios.get(query);
+        //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
+        console.log(response.data)
+        const currentWavPath = bucket_path + response.data;//urlを返すようにaws flask側を変更
+        const currentRef = ref(storage, currentWavPath)
+        getDownloadURL(currentRef)
+        .then((url) => {
+          console.log("wavUrl", url)
+          const espnetTime = new Date().getTime() - start
+          //existingがfalseなのでindexでの保存処理あり
+          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, openai: openaiTime, espnet: espnetTime});
+        })
+        .catch((error) => {
+          res.status(200).json({ prompt: userInput, result: resultString, wav: error});
+        })
+      } catch (error) {
+        console.error(error);
+      }
+    }
   } catch(error) {
     // Consider adjusting the error handling logic for your use case
     if (error.response) {
@@ -92,7 +101,14 @@ export default async function (req, res) {
   }
 }
 
-const generatePrompt = (input) => {
-  return `${input} ->`
+const generateMessages = (input, fewShot) => {
+  const messages = [
+    {"role": "system", "content": fewShot},
+    {"role": "user", "content": input}
+  ]
+  return messages
 }
 
+const searchWavfile = async (id) => {
+
+}
