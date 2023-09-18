@@ -1,8 +1,7 @@
 import Head from "next/head";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db } from "../lib/FirebaseConfig";
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
-import useSound from 'use-sound';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import styles from "./index.module.css";
 
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
@@ -22,6 +21,7 @@ export default function Home() {
   const [wavUrl, setWavUrl] = useState(no_sound);
   const [wavReady, setWavReady] = useState(false)
   const [elapsedTime, setElapsedTime] = useState({total:0.0, openai:0.0, Espnet:0.0})
+  const audioRef = useRef(null)
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
   const selfwords = ["貴方", "あなた", "君"]
@@ -45,6 +45,14 @@ export default function Home() {
       //応答が早すぎる
       setResult(preparedGreeting["output"])
       setWavUrl(preparedGreeting["url"])
+      const convRef = doc(db, "Conversations", user)
+      const cdata = {
+        character: character,
+        input: userInput,
+        output: preparedGreeting["output"],
+        date: today
+      }
+      updateDoc(convRef, {conversation: arrayUnion(cdata)})       
     } else {
       let fewShot = "以下の設定に矛盾しないよう回答すること。設定："
       items.map((item) => {
@@ -121,8 +129,6 @@ export default function Home() {
     console.log(e.target.value);
   }
 
-  const [play] = useSound(wavUrl);
-
   const originalInfo = async() => {
     const docRef = doc(db, "OriginalInformation", "hamefura");
     const docSnap = await getDoc(docRef);
@@ -155,6 +161,10 @@ export default function Home() {
     }
   }
 
+  const audioPlay = () => {
+    audioRef.current.play()
+  }
+
   useEffect(() => {
     originalInfo()
     greetingInfo()
@@ -166,22 +176,23 @@ export default function Home() {
 
   useEffect(() => {
     console.log(wavUrl)
+    audioPlay()
   }, [wavUrl])
 
   return (
     <div>
       <Head>
         <title>はめフラトーク</title>
+        Feature-Policy: autoplay 'self' https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/
       </Head>
+      <main className={styles.main}>
       <div>
       <select className={styles.select1} value={character} label="character" onChange={selectCharacter}>
         {characters.map((name) => {
           return <option key={name} value={name}>{name}</option>;
         })}
       </select>
-      </div>
-
-      <main className={styles.main}>
+      </div>    
         <h3>{character}とトークしてみよう
         </h3>
         <form onSubmit={onSubmit}>
@@ -197,13 +208,16 @@ export default function Home() {
         <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
         <br/>
-        {(wavReady) ? (<button onClick={() => play()}>speak!!</button>) : (
-          <button disabled={true} onClick={() => {setWavReady(true); play()}}>トークを始める</button>
+        {(wavReady) ? (<button className={styles.none} onClick={audioPlay}>speak!!</button>) : (
+          <button disabled={false} onClick={() => {setWavReady(true); audioPlay()}}>トークを始める</button>
         )}
         <br/>
-        <div>トータル所要時間: {elapsedTime.total}msec</div>
-        <div>openAI所要時間: {elapsedTime.openai}msec</div>
-        <div>espnet所要時間: {elapsedTime.Espnet}msec</div>
+        <div className={styles.none}>
+          <div>トータル所要時間: {elapsedTime.total}msec</div>
+          <div>openAI所要時間: {elapsedTime.openai}msec</div>
+          <div>espnet所要時間: {elapsedTime.Espnet}msec</div>
+        </div>
+        <audio src={wavUrl} ref={audioRef}/>
         <div className={styles.none}>{wavUrl}</div>
       </main>
     </div>

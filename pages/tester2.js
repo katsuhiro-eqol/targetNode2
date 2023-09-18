@@ -43,8 +43,8 @@ export default function Tester2() {
     
     if (Object.keys(preparedGreeting).length !== 0){
         //応答が早すぎる
-        setPrompt(userInput)
         setResult(preparedGreeting["output"])
+        setPrompt(userInput)
       } else {
         let fewShot = "以下の設定に矛盾しないよう回答すること。設定："
         items.map((item) => {
@@ -199,7 +199,6 @@ export default function Tester2() {
       <Head>
         <title>target</title>
       </Head>
-
       <main className={styles.main}>
       <div>
       <select className={styles.select1} value={character} label="character" onChange={selectCharacter}>
@@ -213,6 +212,7 @@ export default function Tester2() {
         })}
       </select>
       </div>
+      
         <h4>{character} / {tester}</h4>
         <form onSubmit={onSubmit}>
           <input
