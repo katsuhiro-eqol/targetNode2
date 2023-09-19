@@ -45,6 +45,7 @@ export default function Tester2() {
         //応答が早すぎる
         setResult(preparedGreeting["output"])
         setPrompt(userInput)
+        setUserInput("")
       } else {
         let fewShot = "以下の設定に矛盾しないよう回答すること。設定："
         items.map((item) => {
@@ -81,7 +82,7 @@ export default function Tester2() {
           setHistory(updates);
           console.log(history);
           setUserInput("");
-          setEvaluation("good or bad ?");
+          setEvaluation("good, bad or incorrect?");
           setCanRegistration(false)
         } catch(error) {
           // Consider implementing your own error handling logic here

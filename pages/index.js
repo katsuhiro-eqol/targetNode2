@@ -52,7 +52,8 @@ export default function Home() {
         output: preparedGreeting["output"],
         date: today
       }
-      updateDoc(convRef, {conversation: arrayUnion(cdata)})       
+      updateDoc(convRef, {conversation: arrayUnion(cdata)})   
+      setUserInput("")    
     } else {
       let fewShot = "以下の設定に矛盾しないよう回答すること。設定："
       items.map((item) => {
@@ -84,7 +85,6 @@ export default function Home() {
         setWavUrl(data.wav);
         setPrompt(data.prompt)
         setResult(data.result);
-        setUserInput("");
         const totalTime = new Date().getTime() - start
         const espnetTime = data.espnet - data.openai
         const t = {total:totalTime, openai:data.openai, Espnet:espnetTime}
@@ -117,6 +117,7 @@ export default function Home() {
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata, {merge:true}) 
         }
+        setUserInput("");
       } catch(error) {
         console.error(error);
         alert(error.message);
