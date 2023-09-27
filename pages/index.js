@@ -211,7 +211,7 @@ export default function Home() {
         <div className={styles.result}>{result}</div>
         <br/>
         {(wavReady) ? (<button className={styles.none} onClick={audioPlay}>speak!!</button>) : (
-          <button disabled={false} onClick={() => {setWavReady(true); audioPlay()}}>トークを始める</button>
+          <button className={styles.button} disabled={false} onClick={() => {setWavReady(true); audioPlay()}}>トークを始める</button>
         )}
         <br/>
         <div className={styles.none}>

@@ -108,7 +108,3 @@ const generateMessages = (input, fewShot) => {
   ]
   return messages
 }
-
-const searchWavfile = async (id) => {
-
-}

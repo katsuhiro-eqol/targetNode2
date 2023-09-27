@@ -98,10 +98,15 @@
   border-radius: 4px;
   text-align: center;
   cursor: pointer;
+  width: 200px;
+  margin-left: 85px;
+  margin-right: 85px;
 }
 .main .result {
   font-weight: bold;
   margin-top: 40px;
+  width: 350px;
+  text-align: center;
 }
 .main .evaluation {
   font-weight: bold;
@@ -116,6 +121,10 @@
   font-weight: bold;
   margin-top: 40px;
   color: blue;
+}
+.main .button {
+  margin: 10pt;
+  font-size: 20px;
 }
 .main .button1 {
   margin: 10pt;
