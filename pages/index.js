@@ -197,10 +197,11 @@ export default function Home() {
         <h3>{character}とトークしてみよう
         </h3>
         <form onSubmit={onSubmit}>
-          <input
+          <textarea
             type="text"
             name="message"
             placeholder="伝える内容"
+            rows="3"
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
           />
