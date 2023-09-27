@@ -82,7 +82,7 @@ export default async function (req, res) {
           res.status(200).json({ prompt: userInput, result: resultString, wav: error});
         })
       } catch (error) {
-        console.error(error);
+        res.status(400).json({ prompt: userInput, result: "espnet serverが起動していません", wav: error});
       }
     }
   } catch(error) {
