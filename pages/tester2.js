@@ -47,20 +47,27 @@ export default function Tester2() {
         setPrompt(userInput)
         setUserInput("")
       } else {
-        let fewShot = "以下の設定に矛盾しないよう回答すること。設定："
+        
+        let setting = ""
         items.map((item) => {
             if (userInput.search(item) !==-1){
                 const t = item + "は" + info[item].join() + "。"
-                fewShot += t
+                setting += t
             }
         })
         selfwords.map((word) => {
             if (userInput.search(word) !==-1){
                 const name = characterName[character]
                 const t = "あなたは" + info[name].join() + "。"
-                fewShot += t
+                setting += t
             }
         })
+        if (setting == ""){
+          const name = characterName[character]
+          setting = "あなたは" + info[name].join() + "。"
+        }
+        const fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
+        console.log(fewShot)
         try {
           const response = await fetch("/api/generate3", {
             method: "POST",

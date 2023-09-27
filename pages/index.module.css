@@ -64,7 +64,7 @@
 .main form {
   display: flex;
   flex-direction: column;
-  width: 480px;
+  width: 450px;
 }
 .main input[type="text"] {
   padding: 12px 16px;
