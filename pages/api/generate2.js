@@ -14,7 +14,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const url = "http://54.70.243.84:5000" //espnet@aws
+const ec2_url = "http://54.70.243.84:5000" //espnet@aws
+const ecs_url = "http://57.180.29.26:80" //esc@aws
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 
 export default async function (req, res) {
@@ -65,7 +66,7 @@ export default async function (req, res) {
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
       try {
-        const query = url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character
+        const query = ecs_url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character
         const response = await axios.get(query);
         //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
         console.log(response.data)
