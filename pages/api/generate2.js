@@ -15,11 +15,10 @@ const openai = new OpenAI({
 });
 
 const ec2_url = "http://54.70.243.84:5000" //espnet@aws
-const ecs_url = "http://13.113.209.222:80" //esc@aws
+const ecs_url = "http://13.113.209.222:80" //esc@aws ElasticIP
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 
 export default async function (req, res) {
-  const start = new Date().getTime()
   if (!openai.apiKey) {
     res.status(500).json({
       error: {
@@ -30,7 +29,8 @@ export default async function (req, res) {
   }
   const userInput = req.body.input || '';
   const character = req.body.character;
-  const fewShot = req.body.fewShot
+  const fewShot = req.body.fewShot;
+  const pre = req.body.pre;
 
   if (userInput.length === 0) {
     res.status(400).json({
@@ -43,14 +43,13 @@ export default async function (req, res) {
 
   try {
     const completion = await openai.chat.completions.create({
-      messages: generateMessages(userInput, fewShot),
+      messages: generateMessages(userInput, fewShot, pre),
       model: finetuned_model[character],
       max_tokens: 80,
       stop: "\n",
       temperature: 0.4,
     });
     const resultString = completion.choices[0].message.content.trim()
-    const openaiTime = new Date().getTime() - start
     //resultStringをsha512でハッシュ化
     const hashString = md5(resultString)
     const id = character + "-" + hashString
@@ -62,7 +61,7 @@ export default async function (req, res) {
       const url = docSnap.data().url
       const repeat = docSnap.data().repeat + 1
       //existingがtrueなのでindexでの保存処理なし
-      res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, openai: openaiTime, espnet: 0.0});
+      res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat});
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
       try {
@@ -75,9 +74,8 @@ export default async function (req, res) {
         getDownloadURL(currentRef)
         .then((url) => {
           console.log("wavUrl", url)
-          const espnetTime = new Date().getTime() - start
           //existingがfalseなのでindexでの保存処理あり
-          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, openai: openaiTime, espnet: espnetTime});
+          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1});
         })
         .catch((error) => {
           res.status(200).json({ prompt: userInput, result: resultString, wav: error});
@@ -102,10 +100,22 @@ export default async function (req, res) {
   }
 }
 
-const generateMessages = (input, fewShot) => {
-  const messages = [
-    {"role": "system", "content": fewShot},
-    {"role": "user", "content": input}
-  ]
+const generateMessages = (input, fewShot, pre) => {
+  let messages = []
+  if (pre.output != "") {
+    messages = [
+      {"role": "system", "content": pre.fewShot},
+      {"role": "user", "content": pre.input},
+      {"role": "assistant", "content": pre.output},
+      {"role": "system", "content": fewShot},
+      {"role": "user", "content": input}     
+    ]
+  } else {
+    messages = [
+      {"role": "system", "content": fewShot},
+      {"role": "user", "content": input}   
+    ]   
+  }
+  console.log(messages)
   return messages
 }

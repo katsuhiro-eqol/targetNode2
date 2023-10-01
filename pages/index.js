@@ -13,6 +13,7 @@ export default function Home() {
   const [userInput, setUserInput] = useState("");
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState("");
+  const [pfewShot, setPFewShot] = useState(""); //ひとつ前のfewShot
   const [items, setItems] = useState([]) //固有名詞リスト
   const [info, setInfo] = useState({}) //固有名詞情報
   const [greetings, setGreetings] = useState([]) //定型QAリスト
@@ -20,7 +21,6 @@ export default function Home() {
   //wavUrl：cloud storageのダウンロードurl。初期値は無音ファイル。これを入れることによって次からセッティングされるwavUrlで音がなるようになる。
   const [wavUrl, setWavUrl] = useState(no_sound);
   const [wavReady, setWavReady] = useState(false)
-  const [elapsedTime, setElapsedTime] = useState({total:0.0, openai:0.0, Espnet:0.0})
   const audioRef = useRef(null)
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
@@ -55,27 +55,33 @@ export default function Home() {
       updateDoc(convRef, {conversation: arrayUnion(cdata)})   
       setUserInput("")    
     } else {
-      let fewShot = "以下の設定に矛盾しないよう回答すること。設定："
+      let setting = ""
       items.map((item) => {
           if (userInput.search(item) !==-1){
               const t = item + "は" + info[item].join() + "。"
-              fewShot += t
+              setting += t
           }
       })
       selfwords.map((word) => {
           if (userInput.search(word) !==-1){
               const name = characterName[character]
               const t = "あなたは" + info[name].join() + "。"
-              fewShot += t
+              setting += t
           }
       })
+      if (setting == ""){
+        const name = characterName[character]
+        setting = "あなたは" + info[name].join() + "。"
+      }
+      const fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
+      const pre = {input: prompt, output: result, fewShot: pfewShot}
       try {
         const response = await fetch("/api/generate2", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot }),
+          body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, pre: pre }),
         });
   
         const data = await response.json();
@@ -84,11 +90,9 @@ export default function Home() {
         }
         setWavUrl(data.wav);
         setPrompt(data.prompt)
-        setResult(data.result);
-        const totalTime = new Date().getTime() - start
-        const espnetTime = data.espnet - data.openai
-        const t = {total:totalTime, openai:data.openai, Espnet:espnetTime}
-        setElapsedTime(t)
+        setResult(data.result)
+        setPFewShot(fewShot)
+
         const convRef = doc(db, "Conversations", user)
         const cdata = {
           character: character,
@@ -122,6 +126,27 @@ export default function Home() {
         console.error(error);
         alert(error.message);
       }
+    }
+  }
+
+  const talkStart = async () => {
+    try {
+      const response = await fetch("/api/dockerInit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ character: character }),
+      });
+      const data = await response.json();
+      if (data.wav.length !== 0) {
+        setWavReady(true)
+        setResult("")
+      } else {
+        setResult(data.result)
+      }
+    } catch(error) {
+      console.log(error)
     }
   }
 
@@ -209,16 +234,12 @@ export default function Home() {
         </form>
         <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
+        <div className={styles.none}>{pfewShot}</div>
         <br/>
         {(wavReady) ? (<button className={styles.none} onClick={audioPlay}>speak!!</button>) : (
-          <button className={styles.button} disabled={false} onClick={() => {setWavReady(true); audioPlay()}}>トークを始める</button>
+          <button className={styles.button} disabled={wavReady} onClick={() => {talkStart(); audioPlay()}}>トークを始める</button>
         )}
         <br/>
-        <div className={styles.none}>
-          <div>トータル所要時間: {elapsedTime.total}msec</div>
-          <div>openAI所要時間: {elapsedTime.openai}msec</div>
-          <div>espnet所要時間: {elapsedTime.Espnet}msec</div>
-        </div>
         <audio src={wavUrl} ref={audioRef}/>
         <div className={styles.none}>{wavUrl}</div>
       </main>
