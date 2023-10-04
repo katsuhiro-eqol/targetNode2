@@ -104,10 +104,10 @@ const generateMessages = (input, fewShot, pre) => {
   let messages = []
   if (pre.output != "") {
     messages = [
-      {"role": "system", "content": pre.fewShot},
+      //preのfewShotは使わない。systemひとつに対してuserとassistantの会話が続く
+      {"role": "system", "content": fewShot},
       {"role": "user", "content": pre.input},
       {"role": "assistant", "content": pre.output},
-      {"role": "system", "content": fewShot},
       {"role": "user", "content": input}     
     ]
   } else {

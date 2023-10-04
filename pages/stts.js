@@ -1,7 +1,12 @@
 import "regenerator-runtime";
-import React from "react";
+import React, { startTransition } from "react";
 import Head from "next/head";
 import { useState, useEffect, useRef } from "react";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import Button from '@mui/material/Button';
+import MicIcon from '@mui/icons-material/Mic';
+import SendIcon from '@mui/icons-material/Send';
+import StopIcon from '@mui/icons-material/Stop';
 import { db } from "../lib/FirebaseConfig";
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import styles from "./index.module.css";
@@ -10,7 +15,7 @@ const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-3945
 const timestamp = Timestamp.now();
 const today = timestamp.toDate();
 
-export default function Home() {
+export default function Index2() {
   const [character, setCharacter] = useState("silva");
   const [userInput, setUserInput] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -23,11 +28,18 @@ export default function Home() {
   //wavUrl：cloud storageのダウンロードurl。初期値は無音ファイル。これを入れることによって次からセッティングされるwavUrlで音がなるようになる。
   const [wavUrl, setWavUrl] = useState(no_sound);
   const [wavReady, setWavReady] = useState(false)
+  const [record,setRecord] = useState(false)
   const audioRef = useRef(null)
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
   const selfwords = ["貴方", "あなた", "君"]
   const user = "tester" //登録情報より取得
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -76,7 +88,6 @@ export default function Home() {
         //settingない場合はfewShotを入れない（文字数を減らす）
         fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
       }
-      
       const pre = {input: prompt, output: result, fewShot: pfewShot}
       try {
         const response = await fetch("/api/generate2", {
@@ -194,6 +205,22 @@ export default function Home() {
     audioRef.current.play()
   }
 
+  const sttStart = () => {
+    setRecord(true)
+    SpeechRecognition.startListening()
+  }
+
+  const sttStop = () => {
+    setRecord(false)
+    SpeechRecognition.stopListening()
+    setUserInput(transcript)
+    resetTranscript()
+  }
+
+  const sttReset = () => {
+    resetTranscript()
+  }
+
   useEffect(() => {
     originalInfo()
     greetingInfo()
@@ -222,7 +249,7 @@ export default function Home() {
         })}
       </select>
       </div>    
-        <h3>{character}とトークしてみよう
+        <h3>{characterName[character]}とトークしてみよう
         </h3>
         <form onSubmit={onSubmit}>
           <textarea
@@ -233,18 +260,35 @@ export default function Home() {
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
           />
-          <input disabled={!wavReady} type="submit" value="伝える" />
         </form>
         <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
         <div className={styles.none}>{pfewShot}</div>
         <br/>
+        <audio src={wavUrl} ref={audioRef}/>
+        <div className={styles.none}>{wavUrl}</div>
+        <div>
+          {!record ?(
+            <Button className={styles.button} disabled={!wavReady} variant="contained" onClick={sttStart}>
+              <MicIcon />
+              音声入力
+            </Button>
+          ):(
+            <Button className={styles.button} variant="contained" onClick={sttStop}>
+              <StopIcon />
+              入力停止
+            </Button>)}
+
+          <Button className={styles.button} disabled={!wavReady} variant="contained" onClick={(event) => onSubmit(event)}>
+            <SendIcon />
+            送信
+          </Button>
+        </div>
+        <br/>
+        <div>{transcript}</div>
         {(wavReady) ? (<button className={styles.none} onClick={audioPlay}>speak!!</button>) : (
           <button className={styles.button} disabled={wavReady} onClick={() => {talkStart(); audioPlay()}}>トークを始める</button>
         )}
-        <br/>
-        <audio src={wavUrl} ref={audioRef}/>
-        <div className={styles.none}>{wavUrl}</div>
       </main>
     </div>
   );

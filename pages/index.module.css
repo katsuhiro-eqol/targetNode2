@@ -46,14 +46,14 @@
   width: 34px;
 }
 .main h3 {
-  font-size: 30px;
+  font-size: 26px;
   line-height: 40px;
   font-weight: bold;
   color: #202123;
   margin: 16px 0 40px;
 }
 .main h4 {
-  font-size: 26px;
+  font-size: 22px;
   line-height: 32px;
   font-weight: bold;
   color: #202123;
@@ -80,10 +80,10 @@
 }
 .main textarea {
   padding: 12px 16px;
-  border: 1px solid #10a37f;
+  border: 2px solid #160576;
   border-radius: 4px;
   margin-bottom: 24px;
-  outline-color: #10a37f;
+  outline-color: 1px solid #160576;;
   font-size: 20px;
 }
 .main ::placeholder {
@@ -123,8 +123,8 @@
   color: blue;
 }
 .main .button {
-  margin: 10pt;
-  font-size: 20px;
+  margin: 20pt;
+  font-size: 18px;
 }
 .main .button1 {
   margin: 10pt;

@@ -49,6 +49,7 @@ export default function Tester2() {
       } else {
         
         let setting = ""
+        let fewShot = ""
         items.map((item) => {
             if (userInput.search(item) !==-1){
                 const t = item + "は" + info[item].join() + "。"
@@ -62,11 +63,10 @@ export default function Tester2() {
                 setting += t
             }
         })
-        if (setting == ""){
-          const name = characterName[character]
-          setting = "あなたは" + info[name].join() + "。"
+        if (setting !== ""){
+          //settingない場合はfewShotを入れない（文字数を減らす）
+          fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
         }
-        const fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
         console.log(fewShot)
         try {
           const response = await fetch("/api/generate3", {
