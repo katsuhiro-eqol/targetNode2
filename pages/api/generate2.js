@@ -65,7 +65,8 @@ export default async function (req, res) {
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
       try {
-        const query = ecs_url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character
+        //ec2とecsの切り替えはここ
+        const query = ec2_url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character
         const response = await axios.get(query);
         //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
         console.log(response.data)

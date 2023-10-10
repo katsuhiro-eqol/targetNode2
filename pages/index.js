@@ -44,9 +44,13 @@ export default function Home() {
     })
 
     if (Object.keys(preparedGreeting).length !== 0){
-      //応答が早すぎる
-      setResult(preparedGreeting["output"])
-      setWavUrl(preparedGreeting["url"])
+      //応答が早すぎる0.3秒遅らす
+      setTimeout(() => {
+        setWavUrl(preparedGreeting["url"])
+      }, 700);
+      setTimeout(() => {
+        setResult(preparedGreeting["output"])
+      }, 1900);
       const convRef = doc(db, "Conversations", user)
       const cdata = {
         character: character,
@@ -93,7 +97,9 @@ export default function Home() {
         }
         setWavUrl(data.wav);
         setPrompt(data.prompt)
-        setResult(data.result)
+        setTimeout(() => {
+          setResult(data.result) 
+        }, 1200);
         setPFewShot(fewShot)
 
         const convRef = doc(db, "Conversations", user)
