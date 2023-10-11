@@ -47,6 +47,7 @@ export default function Home() {
       //応答が早すぎる0.3秒遅らす
       setTimeout(() => {
         setWavUrl(preparedGreeting["url"])
+        setResult("")
       }, 700);
       setTimeout(() => {
         setResult(preparedGreeting["output"])
@@ -96,6 +97,7 @@ export default function Home() {
           throw data.error || new Error(`Request failed with status ${response.status}`);
         }
         setWavUrl(data.wav);
+        setResult("")
         setPrompt(data.prompt)
         setTimeout(() => {
           setResult(data.result) 
