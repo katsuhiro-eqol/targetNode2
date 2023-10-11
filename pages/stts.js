@@ -59,7 +59,7 @@ export default function Index2() {
       //応答が早すぎる0.3秒遅らす
       setTimeout(() => {
         setWavUrl(preparedGreeting["url"])
-        setResult("")
+        setResult("・・・")
       }, 700);
       setTimeout(() => {
         setResult(preparedGreeting["output"])
@@ -109,7 +109,7 @@ export default function Index2() {
           throw data.error || new Error(`Request failed with status ${response.status}`);
         }
         setWavUrl(data.wav);
-        setResult("")
+        setResult("・・・")
         setPrompt(data.prompt)
         setTimeout(() => {
           setResult(data.result) 
