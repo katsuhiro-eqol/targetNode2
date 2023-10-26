@@ -120,14 +120,16 @@ export default function Home() {
             output: data.result,
             url: data.wav,
             updated_at: today,
-            repeat: 1
+            repeat: 1,
+            status: "created by web system. non revised"
           }
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata) 
         } else {
           const id = character + "-" + data.hash
           const sdata = {
-            repeat: data.repeat
+            repeat: data.repeat,
+            updated_at: today
           }
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata, {merge:true}) 
@@ -230,7 +232,7 @@ export default function Home() {
         })}
       </select>
       </div>    
-        <h3>{character}とトークしてみよう
+        <h3>{characterName[character]}とトークしてみよう
         </h3>
         <form onSubmit={onSubmit}>
           <textarea
