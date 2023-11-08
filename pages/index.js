@@ -23,6 +23,7 @@ export default function Home() {
   //wavUrl：cloud storageのダウンロードurl。初期値は無音ファイル。これを入れることによって次からセッティングされるwavUrlで音がなるようになる。
   const [wavUrl, setWavUrl] = useState(no_sound);
   const [wavReady, setWavReady] = useState(false)
+  const [started, setStarted] = useState(false)
   const audioRef = useRef(null)
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
@@ -31,6 +32,7 @@ export default function Home() {
 
   async function onSubmit(event) {
     event.preventDefault();
+    setWavUrl("")
     const start = new Date().getTime()
     setPrompt(userInput)
     setResult("応答を待ってます・・・")
@@ -143,6 +145,8 @@ export default function Home() {
   }
 
   const talkStart = async () => {
+    setStarted(true)
+    setResult("キャラクターと接続中です")
     try {
       const response = await fetch("/api/dockerInit", {
         method: "POST",
@@ -250,7 +254,7 @@ export default function Home() {
         <div className={styles.none}>{pfewShot}</div>
         <br/>
         {(wavReady) ? (<button className={styles.none} onClick={audioPlay}>speak!!</button>) : (
-          <button className={styles.button} disabled={wavReady} onClick={() => {talkStart(); audioPlay()}}>トークを始める</button>
+          <button className={styles.button} disabled={started} onClick={() => {talkStart(); audioPlay()}}>トークを始める</button>
         )}
         <br/>
         <audio src={wavUrl} ref={audioRef}/>

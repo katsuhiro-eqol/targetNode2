@@ -10,11 +10,11 @@ export default function Tester2() {
   const [history, setHistory] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [evaluation, setEvaluation] = useState("");
+  const [comment, setComment] = useState("");
   const [ideal, setIdeal] = useState("");
   const [canRegistration, setCanRegistration] = useState(false);
   const [character, setCharacter] = useState("silva");
   const [tester, setTester] = useState("tester1@target")
-  const [start, setStart] = useState()
   const [items, setItems] = useState([]) //固有名詞リスト
   const [info, setInfo] = useState({}) //固有名詞情報
   const [greetings, setGreetings] = useState([]) //定型QAリスト
@@ -23,9 +23,6 @@ export default function Tester2() {
   const characterName = {silva: "シルヴァ", setto: "セット"}
   const testers = ["tester1@target", "tester2@target", "tester3@target"]
   const selfwords = ["貴方", "あなた", "君"]
-
-  const timestamp = Timestamp.now();
-  const today = timestamp.toDate();
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -89,7 +86,7 @@ export default function Tester2() {
           setHistory(updates);
           console.log(history);
           setUserInput("");
-          setEvaluation("good, bad or incorrect?");
+          setComment("good, bad or incorrect?");
           setCanRegistration(false)
         } catch(error) {
           // Consider implementing your own error handling logic here
@@ -100,39 +97,22 @@ export default function Tester2() {
   }
 
   const goodButton = () => {
-    const data = 
-        {character: character,
-        date: today,
-        tester: tester,
-        prompt: prompt,
-        completion: result,
-        idealResponse: "",
-        evaluation: "good"}
-    
-    const evaluationRef = doc(db,"Instruction", "taget_tester")
-    updateDoc(evaluationRef, {evaluation2: arrayUnion(data)})
-    setEvaluation("Goodとして登録ずみ   -> next");
+    setEvaluation("good")
+    setComment("Good。別の模範回答も入力可能。空欄のままでも登録可能");
+    setCanRegistration(true)
   }
 
   const badButton = () => {
-      setEvaluation("模範解答例を入力して登録してください");
-      setCanRegistration(true)
-    }
+    setEvaluation("bad")
+    setComment("模範解答例を入力して登録してください");
+    setCanRegistration(true)
+  }
 
-    const incorrectButton = () => {
-        const data = 
-        {character: character,
-        date: today,
-        tester: tester,
-        prompt: prompt,
-        completion: result,
-        idealResponse: "",
-        evaluation: "incorrect"}
-        setEvaluation("嘘つき。Incorrect");
-        const evaluationRef = doc(db,"Instruction", "taget_tester")
-        updateDoc(evaluationRef, {evaluation2: arrayUnion(data)})
-        setEvaluation("Incorrectとして登録ずみ   -> next");
-      }
+  const incorrectButton = () => {
+    setEvaluation("incorrect")
+    setComment("嘘つき。Incorrect。正しい回答を入力して登録してください");
+    setCanRegistration(true)
+  }
 
   const idealResponseRegistration = () => {
     const data = 
@@ -142,12 +122,13 @@ export default function Tester2() {
         prompt: prompt,
         completion: result,
         idealResponse: ideal,
-        evaluation: "bad"}
+        evaluation: evaluation}
     
       const evaluationRef = doc(db,"Instruction", "taget_tester")
       updateDoc(evaluationRef, {evaluation2: arrayUnion(data)})
       setCanRegistration(false)
-      setEvaluation("模範解答例登録済み  -> next")
+      setEvaluation("")
+      setComment("評価および模範回答登録済み  -> next")
       setIdeal("")
   }
 
@@ -234,6 +215,7 @@ export default function Tester2() {
         </form>
         <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
+        <div className={styles.none}>{evaluation}</div>
       <div>
       <br/>
       <br/>
@@ -241,7 +223,7 @@ export default function Tester2() {
         <button className={styles.button2} onClick={badButton}>bad</button>
         <button className={styles.button2} onClick={incorrectButton}>incorrect</button>
       </div>
-      <div>{evaluation}</div>
+      <div>{comment}</div>
         <input className={styles.iinput}
             type="text"
             name="idealResponse"

@@ -8,9 +8,8 @@ export default async function (req, res) {
     try {
         const query = ec2_url + "?input=イニシャライズ&hash=initialize&character=" + character
         const response = await axios.get(query);
-        res.status(200).json({ result: "", wav: response.data});
+        res.status(200).json({ result: "トークの準備ができました", wav: response.data});
     } catch(error) {
-        //res.status(200).json({ result: "少しお待ちください", wav: ""});
-        console.log(error)
+        res.status(404).json({ result: "キャラクターの準備ができていません", wav: ""});
     }
 }
