@@ -5,18 +5,27 @@ import { useState, useEffect, useRef } from "react";
 import styles from "./index.module.css";
 
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
+let initialSlides = new Array(200).fill("open-no.png")
+const arr_c = new Array(4).fill("close-no.png")
+initialSlides = initialSlides.concat(arr_c)
 
+//音声ファイルチェックおよびアニメーションテスト
 export default function CheckSpeech() {
   const [character, setCharacter] = useState("silva");
   const [userInput, setUserInput] = useState("");
   const [wavUrl, setWavUrl] = useState(no_sound);
   const [wavReady, setWavReady] = useState(false)
   const [comment, setComment] = useState("")
+  const [slides, setSlides] = useState(initialSlides)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isSpeaking, setIsSpeaking] = useState(false)
   const audioRef = useRef(null)
+  const intervalRef = useRef(null)
   const characters = ["silva", "setto"];
 
   async function onSubmit(event) {
     setWavUrl("")
+    setCurrentIndex(0)
     event.preventDefault();
     try {
     const response = await fetch("/api/checkspeechfile", {
@@ -32,7 +41,16 @@ export default function CheckSpeech() {
         throw data.error || new Error(`Request failed with status ${response.status}`);
     }
     setWavUrl(data.wav);
+    setIsSpeaking(true)
     setComment(data.comment)
+    //画像数を1/3に減らす。
+    let newS = []
+    data.slides.filter((value, index) => {
+        if (index%3 === 0){
+            newS.push(value)
+        }
+    })
+    setSlides(newS)
     } catch(error) {
     console.error(error);
     alert(error.message);
@@ -48,10 +66,63 @@ export default function CheckSpeech() {
     audioRef.current.play()
   }
 
+  /*
+  const asyncAnimeStart = async() => {
+    if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
+        return;
+    }
+    console.log(slides.length)
+    try {
+        await audioRef.current.play()
+        console.log("time")
+        intervalRef.current = setInterval(() => {
+            setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
+        }, 35)
+    } catch(error) {
+
+    }
+    }
+    */
+
+
+    const animeStart = () => {
+        audioPlay()
+        if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
+            return;
+        }
+        intervalRef.current = setInterval(() => {
+            setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
+        }, 46)
+    }
+/*
+    useEffect(() => {
+        if (currentIndex === slides.length-1){
+            clearInterval(intervalRef.current);
+            intervalRef.current = null
+            console.log("time")
+        }
+    }, [currentIndex]);
+*/
+    useEffect(() => {
+        if (isSpeaking && currentIndex === slides.length-2){
+            setSlides(initialSlides)
+            setCurrentIndex(0)
+            setIsSpeaking(false)
+            setWavUrl("")
+        } else if (!isSpeaking && currentIndex === slides.length-1){
+            setCurrentIndex(0)
+        }
+    }, [currentIndex]);
+
   useEffect(() => {
-    console.log(wavUrl)
+    console.log("play")
     audioPlay()
   }, [wavUrl])
+
+  useEffect(() => {
+    animeStart()
+    setCurrentIndex(0)
+  }, [slides])
 
   return (
     <div>
@@ -80,8 +151,8 @@ export default function CheckSpeech() {
           />
           <input disabled={!wavReady} type="submit" value="音声を確認" />
         </form>
-        {(wavReady) ? (<button className={styles.none} onClick={audioPlay}>speak!!</button>) : (
-          <button className={styles.button} onClick={() => {audioPlay(); setWavReady(true)}}>一番最初にタップして開始</button>
+        {(wavReady) ? (<img className={styles.anime} src={slides[currentIndex]} alt="Image" />) : (
+          <button className={styles.button} onClick={() => {audioPlay(); setWavReady(true); animeStart()}}>一番最初にタップして開始</button>
         )}
         <br/>
         <audio src={wavUrl} ref={audioRef}/>
@@ -91,3 +162,7 @@ export default function CheckSpeech() {
     </div>
   );
 }
+
+/*
+
+*/
