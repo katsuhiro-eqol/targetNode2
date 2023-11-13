@@ -155,6 +155,7 @@ export default function CheckSpeech() {
           <button className={styles.button} onClick={() => {audioPlay(); setWavReady(true); animeStart()}}>一番最初にタップして開始</button>
         )}
         <br/>
+        <p>{currentIndex}</p>
         <audio src={wavUrl} ref={audioRef}/>
         <div>{comment}</div>
         <div className={styles.none} >{wavUrl}</div>
