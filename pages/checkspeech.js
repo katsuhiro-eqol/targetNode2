@@ -4,13 +4,12 @@ import Head from "next/head";
 import { useState, useEffect, useRef } from "react";
 import styles from "./index.module.css";
 
-const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
-let initialSlides = new Array(200).fill("open-no.png")
-const arr_c = new Array(4).fill("close-no.png")
-initialSlides = initialSlides.concat(arr_c)
-
 //音声ファイルチェックおよびアニメーションテスト
 export default function CheckSpeech() {
+const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
+let l = new Array(190).fill("open-no.png")
+const arr_c = new Array(4).fill("close-no.png")
+const initialSlides = l.concat(arr_c)
   const [character, setCharacter] = useState("silva");
   const [userInput, setUserInput] = useState("");
   const [wavUrl, setWavUrl] = useState(no_sound);
@@ -122,6 +121,7 @@ export default function CheckSpeech() {
   useEffect(() => {
     animeStart()
     setCurrentIndex(0)
+    console.log(slides)
   }, [slides])
 
   return (
