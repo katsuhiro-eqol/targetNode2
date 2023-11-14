@@ -31,6 +31,7 @@ export default async function (req, res) {
   const character = req.body.character;
   const fewShot = req.body.fewShot;
   const pre = req.body.pre;
+  const sca = req.body.sca;
 
   if (userInput.length === 0) {
     res.status(400).json({
@@ -59,9 +60,10 @@ export default async function (req, res) {
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const url = docSnap.data().url
+      const duration = docSnap.data().duration
       const repeat = docSnap.data().repeat + 1
       //existingがtrueなのでindexでの保存処理なし
-      res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat});
+      res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: duration});
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
       try {
@@ -69,14 +71,14 @@ export default async function (req, res) {
         const query = ecs_url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character+ "&sca=" + sca
         const response = await axios.get(query);
         //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
-        console.log(response.data)
-        const currentWavPath = bucket_path + response.data;//urlを返すようにaws flask側を変更
+        console.log(response.data.wav)
+        const currentWavPath = bucket_path + response.data.wav;//urlを返すようにaws flask側を変更
         const currentRef = ref(storage, currentWavPath)
         getDownloadURL(currentRef)
         .then((url) => {
           console.log("wavUrl", url)
           //existingがfalseなのでindexでの保存処理あり
-          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1});
+          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, duration:response.data.duration});
         })
         .catch((error) => {
           res.status(200).json({ prompt: userInput, result: resultString, wav: error});

@@ -9,6 +9,9 @@ import styles from "./index.module.css";
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
 const timestamp = Timestamp.now();
 const today = timestamp.toDate();
+let l = new Array(190).fill("open-no.png")
+const arr_c = new Array(6).fill("close-no.png")
+const initialSlides = l.concat(arr_c)
 
 export default function Home() {
   const [character, setCharacter] = useState("silva");
@@ -22,6 +25,7 @@ export default function Home() {
   const [gInfo, setGInfo] = useState({}) //定型QA情報
   //wavUrl：cloud storageのダウンロードurl。初期値は無音ファイル。これを入れることによって次からセッティングされるwavUrlで音がなるようになる。
   const [wavUrl, setWavUrl] = useState(no_sound);
+  const [slides, setSlides] = useStatio(initialSlides)
   const [wavReady, setWavReady] = useState(false)
   const [started, setStarted] = useState(false)
   const audioRef = useRef(null)
@@ -122,6 +126,7 @@ export default function Home() {
             filename: filename,
             output: data.result,
             url: data.wav,
+            duration: data.duration,
             updated_at: today,
             repeat: 1,
             status: "created by web system. non revised"
