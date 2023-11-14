@@ -27,6 +27,7 @@ export default function Home() {
   const audioRef = useRef(null)
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
+  const scaList = {silva: 1.0, setto: 1.2}
   const selfwords = ["貴方", "あなた", "君"]
   const user = "tester" //登録情報より取得
 
@@ -84,7 +85,7 @@ export default function Home() {
         fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
       }
       
-      const pre = {input: prompt, output: result, fewShot: pfewShot}
+      const pre = {input: prompt, output: result, fewShot: pfewShot, sca: scaList[character]}
       try {
         const response = await fetch("/api/generate2", {
           method: "POST",
