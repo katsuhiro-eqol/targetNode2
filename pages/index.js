@@ -9,9 +9,7 @@ import styles from "./index.module.css";
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
 const timestamp = Timestamp.now();
 const today = timestamp.toDate();
-let l = new Array(190).fill("open-no.png")
-const arr_c = new Array(6).fill("close-no.png")
-const initialSlides = l.concat(arr_c)
+const initialSlides = new Array(190).fill("Sil_00")
 
 export default function Home() {
   const [character, setCharacter] = useState("silva");

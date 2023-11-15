@@ -7,9 +7,7 @@ import styles from "./index.module.css";
 //音声ファイルチェックおよびアニメーションテスト
 export default function CheckSpeech() {
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
-let l = new Array(190).fill("open-no.png")
-const arr_c = new Array(6).fill("close-no.png")
-const initialSlides = l.concat(arr_c)
+const initialSlides = new Array(300).fill("Sil_00.jpg")
   const [character, setCharacter] = useState("silva");
   const [userInput, setUserInput] = useState("");
   const [wavUrl, setWavUrl] = useState(no_sound);
@@ -56,62 +54,35 @@ const initialSlides = l.concat(arr_c)
     }
 }
 
-  const selectCharacter = (e) => {
-    setCharacter(e.target.value);
-    console.log(e.target.value);
-  }
+const selectCharacter = (e) => {
+setCharacter(e.target.value);
+console.log(e.target.value);
+}
 
-  const audioPlay = () => {
-    audioRef.current.play()
-  }
+const audioPlay = () => {
+audioRef.current.play()
+}
 
-  /*
-  const asyncAnimeStart = async() => {
+const animeStart = () => {
+    //audioPlay()
     if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
         return;
     }
-    console.log(slides.length)
-    try {
-        await audioRef.current.play()
-        console.log("time")
-        intervalRef.current = setInterval(() => {
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
-        }, 35)
-    } catch(error) {
+    intervalRef.current = setInterval(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
+    }, 42)
+}
 
+useEffect(() => {
+    if (isSpeaking && currentIndex === slides.length-2){
+        setSlides(initialSlides)
+        setCurrentIndex(0)
+        setIsSpeaking(false)
+        setWavUrl("")
+    } else if (!isSpeaking && currentIndex === slides.length-1){
+        setCurrentIndex(0)
     }
-    }
-    */
-
-
-    const animeStart = () => {
-        audioPlay()
-        if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
-            return;
-        }
-        intervalRef.current = setInterval(() => {
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
-        }, 46)
-    }
-/*
-    useEffect(() => {
-        if (currentIndex === slides.length-1){
-            clearInterval(intervalRef.current);
-            intervalRef.current = null
-            console.log("time")
-        }
-    }, [currentIndex]);
-*/
-    useEffect(() => {
-        if (isSpeaking && currentIndex === slides.length-2){
-            setSlides(initialSlides)
-            setCurrentIndex(0)
-            setIsSpeaking(false)
-            setWavUrl("")
-        } else if (!isSpeaking && currentIndex === slides.length-1){
-            setCurrentIndex(0)
-        }
-    }, [currentIndex]);
+}, [currentIndex]);
 
   useEffect(() => {
     console.log("play")
@@ -121,7 +92,7 @@ const initialSlides = l.concat(arr_c)
   useEffect(() => {
     animeStart()
     setCurrentIndex(0)
-    console.log(slides)
+    console.log(slides.length)
   }, [slides])
 
   return (

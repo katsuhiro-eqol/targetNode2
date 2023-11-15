@@ -38,7 +38,7 @@ if (docSnap.exists()) {
 
 const durationResolve = (text) => {
     const durationList = text.split("&")
-    let imageList = new Array(3).fill("open-no.png")
+    let imageList = new Array(3).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
         const child = itemList[1]
@@ -47,38 +47,38 @@ const durationResolve = (text) => {
 
         switch(mother){
             case "9":
-                const arr1 = new Array(count).fill("open-a.png")
+                const arr1 = new Array(count).fill("Sil_01-A.jpg")
                 imageList = imageList.concat(arr1)
                 break
             case "12":
-                const arr2 = new Array(count).fill("open-i.png")
+                const arr2 = new Array(count).fill("Sil_02-I.jpg")
                 imageList = imageList.concat(arr2)
                 break
             case "14":
-                const arr3 = new Array(count).fill("open-u.png")
+                const arr3 = new Array(count).fill("Sil_03-U-O.jpg")
                 imageList = imageList.concat(arr3)                   
                 break
             case "15":
-                const arr4 = new Array(count).fill("open-e.png")
+                const arr4 = new Array(count).fill("Sil_04-E.jpg")
                 imageList = imageList.concat(arr4)
                 break
             case "10":
-                const arr5 = new Array(count).fill("open-o.png")
+                const arr5 = new Array(count).fill("Sil_03-U-O.jpg")
                 imageList = imageList.concat(arr5)
                 break
             case 23, 25, 35:
-                const arr_n = new Array(count).fill("open-no.png")
+                const arr_n = new Array(count).fill("Sil_00.jpg")
                 imageList = imageList.concat(arr_n)
                 break
             default:
-                const arr_n2 = new Array(1).fill("open-no.png")
+                const arr_n2 = new Array(1).fill("Sil_00.jpg")
                 imageList = imageList.concat(arr_n2)
                 break
         }
     })
     const lastImage = imageList.slice(-1)[0]
-    const arr_6 = new Array(9).fill(lastImage)
-    const arr_n3 = new Array(24).fill("open-no.png")
+    const arr_6 = new Array(12).fill(lastImage)
+    const arr_n3 = new Array(48).fill("Sil_00.jpg")
     imageList = imageList.concat(arr_6)
     imageList = imageList.concat(arr_n3)
     return imageList
