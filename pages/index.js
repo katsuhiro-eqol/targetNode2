@@ -25,7 +25,7 @@ export default function Home() {
   const [gInfo, setGInfo] = useState({}) //定型QA情報
   //wavUrl：cloud storageのダウンロードurl。初期値は無音ファイル。これを入れることによって次からセッティングされるwavUrlで音がなるようになる。
   const [wavUrl, setWavUrl] = useState(no_sound);
-  const [slides, setSlides] = useStatio(initialSlides)
+  const [slides, setDuration] = useState(initialSlides)
   const [wavReady, setWavReady] = useState(false)
   const [started, setStarted] = useState(false)
   const audioRef = useRef(null)

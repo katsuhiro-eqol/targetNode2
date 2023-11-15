@@ -81,10 +81,10 @@ export default async function (req, res) {
           res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, duration:response.data.duration});
         })
         .catch((error) => {
-          res.status(200).json({ prompt: userInput, result: resultString, wav: error});
+          res.status(200).json({ prompt: userInput, result: resultString, wav: error, duration: ""});
         })
       } catch (error) {
-        res.status(400).json({ prompt: userInput, result: "espnet serverが起動していません", wav: error});
+        res.status(400).json({ prompt: userInput, result: "espnet serverが起動していません", wav: error, duration: ""});
       }
     }
   } catch(error) {
