@@ -38,6 +38,7 @@ if (docSnap.exists()) {
 
 const durationResolve = (text) => {
     const durationList = text.split("&")
+    console.log(durationList)
     let imageList = new Array(3).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
@@ -66,7 +67,9 @@ const durationResolve = (text) => {
                 const arr5 = new Array(count).fill("Sil_03-U-O.jpg")
                 imageList = imageList.concat(arr5)
                 break
-            case 23, 25, 35:
+            case "23":
+            case "25":
+            case "35":
                 const arr_n = new Array(count).fill("Sil_00.jpg")
                 imageList = imageList.concat(arr_n)
                 break

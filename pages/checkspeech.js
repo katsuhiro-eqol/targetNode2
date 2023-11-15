@@ -47,6 +47,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
             newS.push(value)
         }
     })
+    console.log(newS)
     setSlides(newS)
     } catch(error) {
     console.error(error);
@@ -70,7 +71,7 @@ const animeStart = () => {
     }
     intervalRef.current = setInterval(() => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
-    }, 42)
+    }, 35)
 }
 
 useEffect(() => {

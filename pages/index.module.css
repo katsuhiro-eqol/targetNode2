@@ -46,11 +46,11 @@
   width: 34px;
 }
 .main h3 {
-  font-size: 26px;
-  line-height: 40px;
+  font-size: 24px;
+  line-height: 30px;
   font-weight: bold;
   color: #202123;
-  margin: 16px 0 40px;
+  margin: 16px 0 25px;
 }
 .main h4 {
   font-size: 22px;
@@ -84,7 +84,7 @@
   border-radius: 4px;
   margin-bottom: 24px;
   outline-color: 1px solid #160576;;
-  font-size: 20px;
+  font-size: 16px;
 }
 .main ::placeholder {
   color: #8e8ea0;
@@ -158,5 +158,6 @@
 }
 .anime {
   width: 280px;
+  margin-top: 20px;
   transition-duration: 20ms;
 }
