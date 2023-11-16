@@ -59,11 +59,17 @@ export default async function (req, res) {
     const docRef = doc(db, "Speech", id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      const url = docSnap.data().url
-      const duration = docSnap.data().duration
+      const data = docSnap.data()
+      const keys = Object.keys(data)
+      const url = data.url
       const repeat = docSnap.data().repeat + 1
-      //existingがtrueなのでindexでの保存処理なし
-      res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: duration});
+      if (keys.includes("duration")){
+        const duration = data.duration
+        const imageList = durationResolve(duration)
+        res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: duration, slides: imageList});
+      }else{
+        res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: "no duration data", slides: []});
+      }  
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
       try {
@@ -74,17 +80,18 @@ export default async function (req, res) {
         console.log(response.data.wav)
         const currentWavPath = bucket_path + response.data.wav;//urlを返すようにaws flask側を変更
         const currentRef = ref(storage, currentWavPath)
+        const imageList = durationResolve(response.data.duration)
         getDownloadURL(currentRef)
         .then((url) => {
           console.log("wavUrl", url)
           //existingがfalseなのでindexでの保存処理あり
-          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, duration:response.data.duration});
+          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, duration:response.data.duration, slides: imageList});
         })
         .catch((error) => {
-          res.status(200).json({ prompt: userInput, result: resultString, wav: error, duration: ""});
+          res.status(200).json({ prompt: userInput, result: resultString, wav: error, duration: "", slides:[]});
         })
       } catch (error) {
-        res.status(400).json({ prompt: userInput, result: "espnet serverが起動していません", wav: error, duration: ""});
+        res.status(400).json({ prompt: userInput, result: "espnet serverが起動していません", wav: error, duration: "", slides: []});
       }
     }
   } catch(error) {
@@ -121,4 +128,54 @@ const generateMessages = (input, fewShot, pre) => {
   }
   console.log(messages)
   return messages
+}
+
+const durationResolve = (text) => {
+  const durationList = text.split("&")
+  let imageList = new Array(3).fill("Sil_00.jpg")
+  durationList.forEach((item) => {
+      const itemList = item.split("-")
+      const child = itemList[1]
+      const mother = itemList[2]
+      const count = parseInt(itemList[3])
+
+      switch(mother){
+          case "9":
+              const arr1 = new Array(count).fill("Sil_01-A.jpg")
+              imageList = imageList.concat(arr1)
+              break
+          case "12":
+              const arr2 = new Array(count).fill("Sil_02-I.jpg")
+              imageList = imageList.concat(arr2)
+              break
+          case "14":
+              const arr3 = new Array(count).fill("Sil_03-U-O.jpg")
+              imageList = imageList.concat(arr3)                   
+              break
+          case "15":
+              const arr4 = new Array(count).fill("Sil_04-E.jpg")
+              imageList = imageList.concat(arr4)
+              break
+          case "10":
+              const arr5 = new Array(count).fill("Sil_03-U-O.jpg")
+              imageList = imageList.concat(arr5)
+              break
+          case "23":
+          case "25":
+          case "35":
+              const arr_n = new Array(count).fill("Sil_00.jpg")
+              imageList = imageList.concat(arr_n)
+              break
+          default:
+              const arr_n2 = new Array(1).fill("Sil_00.jpg")
+              imageList = imageList.concat(arr_n2)
+              break
+      }
+  })
+  const lastImage = imageList.slice(-1)[0]
+  const arr_6 = new Array(12).fill(lastImage)
+  const arr_n3 = new Array(48).fill("Sil_00.jpg")
+  imageList = imageList.concat(arr_6)
+  imageList = imageList.concat(arr_n3)
+  return imageList
 }

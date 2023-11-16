@@ -38,7 +38,6 @@ if (docSnap.exists()) {
 
 const durationResolve = (text) => {
     const durationList = text.split("&")
-    console.log(durationList)
     let imageList = new Array(3).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")

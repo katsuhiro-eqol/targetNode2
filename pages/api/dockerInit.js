@@ -10,6 +10,6 @@ export default async function (req, res) {
         const response = await axios.get(query);
         res.status(200).json({ result: "トークの準備ができました", wav: response.data.wav});
     } catch(error) {
-        res.status(404).json({ result: "キャラクターの準備ができていません", wav: ""});
+        res.status(404).json({ result: "error", wav: ""});
     }
 }

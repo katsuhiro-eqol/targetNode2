@@ -10,7 +10,9 @@ const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-3945
 const timestamp = Timestamp.now();
 const today = timestamp.toDate();
 
-export default function Home() {
+
+export default function Animation() {
+const initialSlides = new Array(300).fill("Sil_00.jpg")
   const [character, setCharacter] = useState("silva");
   const [userInput, setUserInput] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -22,9 +24,12 @@ export default function Home() {
   const [gInfo, setGInfo] = useState({}) //定型QA情報
   //wavUrl：cloud storageのダウンロードurl。初期値は無音ファイル。これを入れることによって次からセッティングされるwavUrlで音がなるようになる。
   const [wavUrl, setWavUrl] = useState(no_sound);
+  const [slides, setSlides] = useState(initialSlides)
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [wavReady, setWavReady] = useState(false)
   const [started, setStarted] = useState(false)
   const audioRef = useRef(null)
+  const intervalRef = useRef(null)
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
   const scaList = {silva: 1.0, setto: 1.2}
@@ -106,7 +111,15 @@ export default function Home() {
           setResult(data.result) 
         }, 1200);
         setPFewShot(fewShot)
-
+        let newS = []
+        data.slides.filter((value, index) => {
+            if (index%3 === 0){
+                newS.push(value)
+            }
+        })
+        if (newS.length >0){
+            setSlides(newS)
+        }
         const convRef = doc(db, "Conversations", user)
         const cdata = {
           character: character,
@@ -147,7 +160,16 @@ export default function Home() {
   }
 
   const talkStart = async () => {
-    setStarted(true)
+    //setStarted(true)
+    if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
+        return;
+    }
+    intervalRef.current = setInterval(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
+    }, 35)
+
+    setWavReady(true)
+    /*
     setResult("キャラクターと接続中です")
     try {
       const response = await fetch("/api/dockerInit", {
@@ -167,6 +189,7 @@ export default function Home() {
     } catch(error) {
       console.log(error)
     }
+    */
   }
 
   const selectCharacter = (e) => {
@@ -192,7 +215,6 @@ export default function Home() {
   const greetingInfo = async() => {
     const docRef = doc(db, "Greeting", character);
     const docSnap = await getDoc(docRef);
-
     if (docSnap.exists()) {
         const data = docSnap.data()
         console.log("Document data:", data);
@@ -216,6 +238,10 @@ export default function Home() {
   },[])
 
   useEffect(() => {
+    console.log(result)
+  },[result])
+
+  useEffect(() => {
     greetingInfo()
   },[character])
 
@@ -223,6 +249,11 @@ export default function Home() {
     console.log(wavUrl)
     audioPlay()
   }, [wavUrl])
+
+  useEffect(() => {
+    setCurrentIndex(0)
+    console.log(slides)
+  }, [slides])
 
   return (
     <div>
@@ -232,33 +263,28 @@ export default function Home() {
       </Head>
       <main className={styles.main}>
       <div>
-      <select className={styles.select1} value={character} label="character" onChange={selectCharacter}>
-        {characters.map((name) => {
-          return <option key={name} value={name}>{name}</option>;
-        })}
-      </select>
-      </div>    
-        <h3>{characterName[character]}とトークしてみよう
-        </h3>
-        <form onSubmit={onSubmit}>
-          <textarea
-            type="text"
-            name="message"
-            placeholder="伝える内容"
-            rows="3"
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-          />
-          <input disabled={!wavReady} type="submit" value="伝える" />
-        </form>
-        <div className={styles.result}>{prompt}</div>
-        <div className={styles.result}>{result}</div>
-        <div className={styles.none}>{pfewShot}</div>
-        <br/>
-        {(wavReady) ? (<button className={styles.none} onClick={audioPlay}>speak!!</button>) : (
-          <button className={styles.button} disabled={started} onClick={() => {talkStart(); audioPlay()}}>トークを始める</button>
+      {(wavReady) ? (<img className={styles.anime} src={slides[currentIndex]} alt="Image" />) : (
+          <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>一番最初にタップして開始</button>
         )}
-        <br/>
+      </div>    
+      {wavReady && (
+        <div className={styles.bottom_items}>
+        <div className={styles.result}>{prompt}</div>
+        <div className={styles.result}>{result}</div>        
+       <form onSubmit={onSubmit}>
+       <textarea
+         type="text"
+         name="message"
+         placeholder="伝える内容"
+         rows="2"
+         value={userInput}
+         onChange={(e) => setUserInput(e.target.value)}
+       />
+       <input disabled={!wavReady} type="submit" value="伝える" />
+     </form>
+     </div>
+      )}
+        <div className={styles.none}>{pfewShot}</div>
         <audio src={wavUrl} ref={audioRef}/>
         <div className={styles.none}>{wavUrl}</div>
       </main>

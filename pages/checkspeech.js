@@ -47,7 +47,6 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
             newS.push(value)
         }
     })
-    console.log(newS)
     setSlides(newS)
     } catch(error) {
     console.error(error);
@@ -60,8 +59,9 @@ setCharacter(e.target.value);
 console.log(e.target.value);
 }
 
-const audioPlay = () => {
-audioRef.current.play()
+const audioPlay = async() => {
+    await audioRef.current.play()
+    setCurrentIndex(0)
 }
 
 const animeStart = () => {
@@ -91,9 +91,8 @@ useEffect(() => {
   }, [wavUrl])
 
   useEffect(() => {
-    animeStart()
+    //animeStart()
     setCurrentIndex(0)
-    console.log(slides.length)
   }, [slides])
 
   return (

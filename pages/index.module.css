@@ -104,7 +104,8 @@
 }
 .main .result {
   font-weight: bold;
-  margin-top: 40px;
+  margin-top: 20px;
+  margin-bottom: 20px;
   width: 350px;
   text-align: center;
 }
@@ -160,4 +161,10 @@
   width: 280px;
   margin-top: 20px;
   transition-duration: 20ms;
+}
+.bottom_items {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 30px;
 }
