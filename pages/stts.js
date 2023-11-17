@@ -234,6 +234,9 @@ export default function Index2() {
 }
 
 const talkStart = async () => {
+  //暫定的にESPnetが立ち上がってなくても使えるようにする
+  setWavReady(true)
+  /*
   try {
     const response = await fetch("/api/dockerInit", {
       method: "POST",
@@ -252,6 +255,7 @@ const talkStart = async () => {
   } catch(error) {
     console.log(error)
   }
+  */
 }
 
   const selectCharacter = (e) => {
