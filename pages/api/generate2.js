@@ -32,6 +32,7 @@ export default async function (req, res) {
   const fewShot = req.body.fewShot;
   const pre = req.body.pre;
   const sca = req.body.sca;
+  console.log(sca)
 
   if (userInput.length === 0) {
     res.status(400).json({

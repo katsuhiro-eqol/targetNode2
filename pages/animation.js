@@ -27,21 +27,24 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
   const [slides, setSlides] = useState(initialSlides)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [wavReady, setWavReady] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
   const [started, setStarted] = useState(false)
   const audioRef = useRef(null)
   const intervalRef = useRef(null)
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
-  const scaList = {silva: 1.0, setto: 1.2}
+  const scaList = {silva: "1.0", setto: "1.2"}
   const selfwords = ["貴方", "あなた", "君"]
   const user = "tester" //登録情報より取得
 
   async function onSubmit(event) {
     event.preventDefault();
     setWavUrl("")
-    const start = new Date().getTime()
+    setIsSpeaking(true)
+    //const start = new Date().getTime()
     setPrompt(userInput)
     setResult("応答を待ってます・・・")
+
     //定型QAかどうかの判定のための準備
     let preparedGreeting = {}
     greetings.map((item) => {
@@ -52,14 +55,21 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     })
 
     if (Object.keys(preparedGreeting).length !== 0){
-      //応答が早すぎる0.3秒遅らす
+      const imageList = durationResolve(preparedGreeting["duration"])
+      let newS = []
+      imageList.filter((value, index) => {
+          if (index%3 === 0){
+              newS.push(value)
+          }
+      })      
       setTimeout(() => {
         setWavUrl(preparedGreeting["url"])
+        setSlides(newS)
         setResult("・・・")
       }, 700);
       setTimeout(() => {
         setResult(preparedGreeting["output"])
-      }, 1900);
+      }, 3700);
       const convRef = doc(db, "Conversations", user)
       const cdata = {
         character: character,
@@ -69,9 +79,11 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
       }
       updateDoc(convRef, {conversation: arrayUnion(cdata)})   
       setUserInput("")    
+      //ここまで定型応答。以下はopenAIに投げる。
     } else {
       let setting = ""
       let fewShot = ""
+      //固有情報をプロンプトに加えるための処理
       items.map((item) => {
           if (userInput.search(item) !==-1){
               const t = item + "は" + info[item].join() + "。"
@@ -89,15 +101,15 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
         //settingない場合はfewShotを入れない（文字数を減らす）
         fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
       }
-      
-      const pre = {input: prompt, output: result, fewShot: pfewShot, sca: scaList[character]}
+      const pre = {input: prompt, output: result, fewShot: pfewShot}
+      //post
       try {
         const response = await fetch("/api/generate2", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, pre: pre }),
+          body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, pre: pre, sca: scaList[character] }),
         });
   
         const data = await response.json();
@@ -109,7 +121,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
         setPrompt(data.prompt)
         setTimeout(() => {
           setResult(data.result) 
-        }, 1200);
+        }, 3000);
         setPFewShot(fewShot)
         let newS = []
         data.slides.filter((value, index) => {
@@ -159,6 +171,56 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     }
   }
 
+  const durationResolve = (text) => {
+    const durationList = text.split("&")
+    let imageList = new Array(3).fill("Sil_00.jpg")
+    durationList.forEach((item) => {
+        const itemList = item.split("-")
+        const child = itemList[1]
+        const mother = itemList[2]
+        const count = parseInt(itemList[3])
+
+        switch(mother){
+            case "9":
+                const arr1 = new Array(count).fill("Sil_01-A.jpg")
+                imageList = imageList.concat(arr1)
+                break
+            case "12":
+                const arr2 = new Array(count).fill("Sil_02-I.jpg")
+                imageList = imageList.concat(arr2)
+                break
+            case "14":
+                const arr3 = new Array(count).fill("Sil_03-U-O.jpg")
+                imageList = imageList.concat(arr3)                   
+                break
+            case "15":
+                const arr4 = new Array(count).fill("Sil_04-E.jpg")
+                imageList = imageList.concat(arr4)
+                break
+            case "10":
+                const arr5 = new Array(count).fill("Sil_03-U-O.jpg")
+                imageList = imageList.concat(arr5)
+                break
+            case "23":
+            case "25":
+            case "35":
+                const arr_n = new Array(count).fill("Sil_00.jpg")
+                imageList = imageList.concat(arr_n)
+                break
+            default:
+                const arr_n2 = new Array(1).fill("Sil_00.jpg")
+                imageList = imageList.concat(arr_n2)
+                break
+        }
+    })
+    const lastImage = imageList.slice(-1)[0]
+    const arr_6 = new Array(12).fill(lastImage)
+    const arr_n3 = new Array(48).fill("Sil_00.jpg")
+    imageList = imageList.concat(arr_6)
+    imageList = imageList.concat(arr_n3)
+    return imageList
+}
+
   const talkStart = async () => {
     //setStarted(true)
     if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
@@ -192,6 +254,19 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     */
   }
 
+  useEffect(() => {
+    if (isSpeaking && currentIndex === slides.length-2){
+        setSlides(initialSlides)
+        setCurrentIndex(0)
+        setIsSpeaking(false)
+        setWavUrl("")
+    } else if (!isSpeaking && currentIndex === slides.length-2){
+        setCurrentIndex(0)
+        setSlides(initialSlides)
+        setIsSpeaking(false)
+    }
+}, [currentIndex]);
+
   const selectCharacter = (e) => {
     setCharacter(e.target.value);
     console.log(e.target.value);
@@ -202,9 +277,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         const data = docSnap.data()
-        console.log("Document data:", data);
         const items = Object.keys(data)
-        console.log("items:", items);
         setItems(items)
         setInfo(data)
     } else {
@@ -217,9 +290,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         const data = docSnap.data()
-        console.log("Document data:", data);
         const g = Object.keys(data)
-        console.log("greetings:", g);
         setGreetings(g)
         setGInfo(data)
     } else {
@@ -228,31 +299,30 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     }
   }
 
-  const audioPlay = () => {
-    audioRef.current.play()
+  const audioPlay = async() => {
+    await audioRef.current.play()
+    setCurrentIndex(0)
   }
 
   useEffect(() => {
     originalInfo()
     greetingInfo()
+    return () => {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
+    };
   },[])
-
-  useEffect(() => {
-    console.log(result)
-  },[result])
 
   useEffect(() => {
     greetingInfo()
   },[character])
 
   useEffect(() => {
-    console.log(wavUrl)
     audioPlay()
   }, [wavUrl])
 
   useEffect(() => {
     setCurrentIndex(0)
-    console.log(slides)
   }, [slides])
 
   return (
@@ -264,7 +334,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
       <main className={styles.main}>
       <div>
       {(wavReady) ? (<img className={styles.anime} src={slides[currentIndex]} alt="Image" />) : (
-          <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>一番最初にタップして開始</button>
+          <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
         )}
       </div>    
       {wavReady && (

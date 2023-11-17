@@ -16,6 +16,7 @@ const timestamp = Timestamp.now();
 const today = timestamp.toDate();
 
 export default function Index2() {
+  const initialSlides = new Array(300).fill("Sil_00.jpg")
   const [character, setCharacter] = useState("silva");
   const [userInput, setUserInput] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -27,11 +28,17 @@ export default function Index2() {
   const [gInfo, setGInfo] = useState({}) //定型QA情報
   //wavUrl：cloud storageのダウンロードurl。初期値は無音ファイル。これを入れることによって次からセッティングされるwavUrlで音がなるようになる。
   const [wavUrl, setWavUrl] = useState(no_sound);
+  const [slides, setSlides] = useState(initialSlides)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isSpeaking, setIsSpeaking] = useState(false)
   const [wavReady, setWavReady] = useState(false)
   const [record,setRecord] = useState(false)
+  const [canSend, setCanSend] = useState(false)
   const audioRef = useRef(null)
+  const intervalRef = useRef(null)
   const characters = ["silva", "setto"];
   const characterName = {silva: "シルヴァ", setto: "セット"}
+  const scaList = {silva: "1.0", setto: "1.2"}
   const selfwords = ["貴方", "あなた", "君"]
   const user = "tester" //登録情報より取得
   const {
@@ -43,9 +50,13 @@ export default function Index2() {
 
   async function onSubmit(event) {
     event.preventDefault();
-    const start = new Date().getTime()
+    setWavUrl("")
+    setCanSend(false)//同じInputで繰り返し遅れないようにする
+    setIsSpeaking(true)
+    //const start = new Date().getTime()
     setPrompt(userInput)
     setResult("応答を待ってます・・・")
+
     //定型QAかどうかの判定のための準備
     let preparedGreeting = {}
     greetings.map((item) => {
@@ -56,15 +67,21 @@ export default function Index2() {
     })
 
     if (Object.keys(preparedGreeting).length !== 0){
-      //応答が早すぎる0.3秒遅らす
+      const imageList = durationResolve(preparedGreeting["duration"])
+      let newS = []
+      imageList.filter((value, index) => {
+          if (index%3 === 0){
+              newS.push(value)
+          }
+      })      
       setTimeout(() => {
         setWavUrl(preparedGreeting["url"])
+        setSlides(newS)
         setResult("・・・")
       }, 700);
       setTimeout(() => {
         setResult(preparedGreeting["output"])
-      }, 1900);
-      
+      }, 3700);
       const convRef = doc(db, "Conversations", user)
       const cdata = {
         character: character,
@@ -73,10 +90,12 @@ export default function Index2() {
         date: today
       }
       updateDoc(convRef, {conversation: arrayUnion(cdata)})   
-      setUserInput("")    
+      //setUserInput("")    
+      //ここまで定型応答。以下はopenAIに投げる。
     } else {
       let setting = ""
       let fewShot = ""
+      //固有情報をプロンプトに加えるための処理
       items.map((item) => {
           if (userInput.search(item) !==-1){
               const t = item + "は" + info[item].join() + "。"
@@ -95,13 +114,14 @@ export default function Index2() {
         fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
       }
       const pre = {input: prompt, output: result, fewShot: pfewShot}
+      //post
       try {
         const response = await fetch("/api/generate2", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, pre: pre }),
+          body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, pre: pre, sca: scaList[character] }),
         });
   
         const data = await response.json();
@@ -113,9 +133,17 @@ export default function Index2() {
         setPrompt(data.prompt)
         setTimeout(() => {
           setResult(data.result) 
-        }, 1200);
+        }, 3000);
         setPFewShot(fewShot)
-
+        let newS = []
+        data.slides.filter((value, index) => {
+            if (index%3 === 0){
+                newS.push(value)
+            }
+        })
+        if (newS.length >0){
+            setSlides(newS)
+        }
         const convRef = doc(db, "Conversations", user)
         const cdata = {
           character: character,
@@ -131,20 +159,23 @@ export default function Index2() {
             filename: filename,
             output: data.result,
             url: data.wav,
+            duration: data.duration,
             updated_at: today,
-            repeat: 1
+            repeat: 1,
+            status: "created by web system. non revised"
           }
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata) 
         } else {
           const id = character + "-" + data.hash
           const sdata = {
-            repeat: data.repeat
+            repeat: data.repeat,
+            updated_at: today
           }
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata, {merge:true}) 
         }
-        setUserInput("");
+        //setUserInput("");
       } catch(error) {
         console.error(error);
         alert(error.message);
@@ -152,26 +183,83 @@ export default function Index2() {
     }
   }
 
-  const talkStart = async () => {
-    try {
-      const response = await fetch("/api/dockerInit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ character: character }),
-      });
-      const data = await response.json();
-      if (data.wav.length !== 0) {
-        setWavReady(true)
-        setResult("")
-      } else {
-        setResult(data.result)
-      }
-    } catch(error) {
-      console.log(error)
+  const durationResolve = (text) => {
+    const durationList = text.split("&")
+    let imageList = new Array(3).fill("Sil_00.jpg")
+    durationList.forEach((item) => {
+        const itemList = item.split("-")
+        const child = itemList[1]
+        const mother = itemList[2]
+        const count = parseInt(itemList[3])
+
+        switch(mother){
+            case "9":
+                const arr1 = new Array(count).fill("Sil_01-A.jpg")
+                imageList = imageList.concat(arr1)
+                break
+            case "12":
+                const arr2 = new Array(count).fill("Sil_02-I.jpg")
+                imageList = imageList.concat(arr2)
+                break
+            case "14":
+                const arr3 = new Array(count).fill("Sil_03-U-O.jpg")
+                imageList = imageList.concat(arr3)                   
+                break
+            case "15":
+                const arr4 = new Array(count).fill("Sil_04-E.jpg")
+                imageList = imageList.concat(arr4)
+                break
+            case "10":
+                const arr5 = new Array(count).fill("Sil_03-U-O.jpg")
+                imageList = imageList.concat(arr5)
+                break
+            case "23":
+            case "25":
+            case "35":
+                const arr_n = new Array(count).fill("Sil_00.jpg")
+                imageList = imageList.concat(arr_n)
+                break
+            default:
+                const arr_n2 = new Array(1).fill("Sil_00.jpg")
+                imageList = imageList.concat(arr_n2)
+                break
+        }
+    })
+    const lastImage = imageList.slice(-1)[0]
+    const arr_6 = new Array(12).fill(lastImage)
+    const arr_n3 = new Array(48).fill("Sil_00.jpg")
+    imageList = imageList.concat(arr_6)
+    imageList = imageList.concat(arr_n3)
+    return imageList
+}
+
+const talkStart = async () => {
+  //setStarted(true)
+
+
+  setWavReady(true)
+  /*
+  setResult("キャラクターと接続中です")
+  try {
+    const response = await fetch("/api/dockerInit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ character: character }),
+    });
+    const data = await response.json();
+    if (data.wav.length !== 0) {
+      setWavReady(true)
+      setResult("")
+    } else {
+      setResult(data.result)
     }
+  } catch(error) {
+    console.log(error)
   }
+  */
+}
 
   const selectCharacter = (e) => {
     setCharacter(e.target.value);
@@ -210,11 +298,26 @@ export default function Index2() {
     }
   }
 
-  const audioPlay = () => {
-    audioRef.current.play()
+  useEffect(() => {
+    if (isSpeaking && currentIndex === slides.length-2){
+        setSlides(initialSlides)
+        setCurrentIndex(0)
+        setIsSpeaking(false)
+        setWavUrl("")
+    } else if (!isSpeaking && currentIndex === slides.length-2){
+        setCurrentIndex(0)
+        setSlides(initialSlides)
+        setIsSpeaking(false)
+    }
+}, [currentIndex]);
+
+  const audioPlay = async() => {
+    await audioRef.current.play()
+    setCurrentIndex(0)
   }
 
   const sttStart = () => {
+    setUserInput("")
     setRecord(true)
     SpeechRecognition.startListening()
   }
@@ -222,8 +325,8 @@ export default function Index2() {
   const sttStop = () => {
     setRecord(false)
     SpeechRecognition.stopListening()
-    setUserInput(transcript)
-    resetTranscript()
+    //setUserInput(transcript)
+    //resetTranscript()
   }
 
   const sttReset = () => {
@@ -233,6 +336,17 @@ export default function Index2() {
   useEffect(() => {
     originalInfo()
     greetingInfo()
+    if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
+      return;
+    }
+    intervalRef.current = setInterval(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
+    }, 35)
+
+    return () => {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
+    };
   },[])
 
   useEffect(() => {
@@ -240,9 +354,22 @@ export default function Index2() {
   },[character])
 
   useEffect(() => {
-    console.log(wavUrl)
     audioPlay()
   }, [wavUrl])
+
+  useEffect(() => {
+    setCurrentIndex(0)
+  }, [slides])
+
+  useEffect(() => {
+    setUserInput(transcript)
+  }, [transcript])
+
+  useEffect(() => {
+    if (userInput.length !== 0){
+      setCanSend(true)
+    }
+  }, [userInput])
 
   return (
     <div>
@@ -251,32 +378,28 @@ export default function Index2() {
         Feature-Policy: autoplay 'self' https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/
       </Head>
       <main className={styles.main}>
-      <div>
-      <select className={styles.select1} value={character} label="character" onChange={selectCharacter}>
-        {characters.map((name) => {
-          return <option key={name} value={name}>{name}</option>;
-        })}
-      </select>
-      </div>    
-        <h3>{characterName[character]}とトークしてみよう
-        </h3>
-        <form onSubmit={onSubmit}>
-          <textarea
-            type="text"
-            name="message"
-            placeholder="伝える内容"
-            rows="3"
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-          />
-        </form>
-        <div className={styles.result}>{prompt}</div>
-        <div className={styles.result}>{result}</div>
-        <div className={styles.none}>{pfewShot}</div>
-        <br/>
-        <audio src={wavUrl} ref={audioRef}/>
-        <div className={styles.none}>{wavUrl}</div>
-        <div>
+
+      {(wavReady) ? (
+      <div className={styles.image_container}>
+      <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
+      <div className={styles.result}>{result}</div>
+      </div>
+      ) : (
+          <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
+        )}
+      {wavReady && (
+      <div className={styles.bottom_items}>
+       <form onSubmit={onSubmit}>
+       <textarea
+         type="text"
+         name="message"
+         placeholder="伝える内容"
+         rows="2"
+         value={userInput}
+         onChange={(e) => setUserInput(e.target.value)}
+       />
+     </form>
+     <div　className={styles.button_container}>
           {!record ?(
             <Button className={styles.button} disabled={!wavReady} variant="contained" onClick={sttStart}>
               <MicIcon />
@@ -288,16 +411,15 @@ export default function Index2() {
               入力停止
             </Button>)}
 
-          <Button className={styles.button} disabled={!wavReady} variant="contained" onClick={(event) => onSubmit(event)}>
+          <Button className={styles.button} disabled={!canSend} variant="contained" onClick={(event) => onSubmit(event)}>
             <SendIcon />
             伝える
           </Button>
         </div>
-        <br/>
-        <div>{transcript}</div>
-        {(wavReady) ? (<button className={styles.none} onClick={audioPlay}>speak!!</button>) : (
-          <button className={styles.button} disabled={wavReady} onClick={() => {talkStart(); audioPlay()}}>トークを始める</button>
-        )}
+     </div>
+      )}
+        <audio src={wavUrl} ref={audioRef}/>
+        <div className={styles.none}>{wavUrl}</div>
       </main>
     </div>
   );
