@@ -147,7 +147,6 @@ export default function Home() {
   }
 
   const talkStart = async () => {
-    setStarted(true)
     setResult("キャラクターと接続中です")
     try {
       const response = await fetch("/api/dockerInit", {
@@ -256,7 +255,7 @@ export default function Home() {
         <div className={styles.none}>{pfewShot}</div>
         <br/>
         {(wavReady) ? (<button className={styles.none} onClick={audioPlay}>speak!!</button>) : (
-          <button className={styles.button} disabled={started} onClick={() => {talkStart(); audioPlay()}}>トークを始める</button>
+          <button className={styles.button} disabled={!wavReady} onClick={() => {talkStart(); audioPlay()}}>トークを始める</button>
         )}
         <br/>
         <audio src={wavUrl} ref={audioRef}/>

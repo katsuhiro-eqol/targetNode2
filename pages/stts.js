@@ -234,12 +234,6 @@ export default function Index2() {
 }
 
 const talkStart = async () => {
-  //setStarted(true)
-
-
-  setWavReady(true)
-  /*
-  setResult("キャラクターと接続中です")
   try {
     const response = await fetch("/api/dockerInit", {
       method: "POST",
@@ -258,7 +252,6 @@ const talkStart = async () => {
   } catch(error) {
     console.log(error)
   }
-  */
 }
 
   const selectCharacter = (e) => {
