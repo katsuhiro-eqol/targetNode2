@@ -81,10 +81,14 @@
   outline-color: #10a37f;
 }
 .main textarea {
+  max-width: 400px;
+  width: 90%;
   padding: 12px 16px;
   border: 2px solid #160576;
   border-radius: 4px;
   margin-bottom: 15px;
+  margin-left: auto;
+  margin-right: auto;
   outline-color: 1px solid #160576;;
   font-size: 16px;
 }
@@ -165,16 +169,18 @@
   width: 90%;
   text-align: center;
 }
-.image_container .result{
-  text-align: center;
-}
 .anime {
-  max-width:400px;
+  max-width:380px;
   width: 75%;
   display: block;
   margin-left: auto;
   margin-right: auto;
   transition-duration: 20ms;
+}
+.output {
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 10px;
 }
 .bottom_items {
   max-width:400px;

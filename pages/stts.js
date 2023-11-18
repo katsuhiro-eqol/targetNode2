@@ -53,7 +53,6 @@ export default function Index2() {
     setWavUrl("")
     setRecord(false)
     setCanSend(false)//同じInputで繰り返し遅れないようにする
-    setIsSpeaking(true)
     //const start = new Date().getTime()
     setPrompt(userInput)
     setResult("応答を待ってます・・・")
@@ -313,7 +312,6 @@ useEffect(() => {
   if (currentIndex === slides.length-2){
       setSlides(initialSlides)
       setCurrentIndex(0)
-      setIsSpeaking(false)
       setWavUrl("")
   }
 }, [currentIndex]);
@@ -337,6 +335,7 @@ useEffect(() => {
   useEffect(() => {
     originalInfo()
     greetingInfo()
+    resetTranscript()
     if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
       return;
     }
@@ -356,11 +355,14 @@ useEffect(() => {
   },[character])
 
   useEffect(() => {
-    audioPlay()
+    console.log(wavUrl)
   }, [wavUrl])
 
   useEffect(() => {
-    setCurrentIndex(0)
+    console.log(slides)
+    if (slides !== initialSlides){
+      audioPlay()
+    }
   }, [slides])
 
   useEffect(() => {
@@ -383,7 +385,7 @@ useEffect(() => {
       {(wavReady) ? (
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
-      <div className={styles.result}>{result}</div>
+      <div className={styles.output}>{result}</div>
       </div>
       ) : (
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>

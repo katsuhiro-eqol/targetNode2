@@ -222,14 +222,6 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
 }
 
   const talkStart = async () => {
-    //setStarted(true)
-    if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
-        return;
-    }
-    intervalRef.current = setInterval(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
-    }, 35)
-
     setWavReady(true)
     /*
     setResult("キャラクターと接続中です")
@@ -255,17 +247,12 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
   }
 
   useEffect(() => {
-    if (isSpeaking && currentIndex === slides.length-2){
+    if (currentIndex === slides.length-2){
         setSlides(initialSlides)
         setCurrentIndex(0)
-        setIsSpeaking(false)
         setWavUrl("")
-    } else if (!isSpeaking && currentIndex === slides.length-2){
-        setCurrentIndex(0)
-        setSlides(initialSlides)
-        setIsSpeaking(false)
     }
-}, [currentIndex]);
+  }, [currentIndex]);
 
   const selectCharacter = (e) => {
     setCharacter(e.target.value);
@@ -307,6 +294,13 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
   useEffect(() => {
     originalInfo()
     greetingInfo()
+    if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
+        return;
+      }
+      intervalRef.current = setInterval(() => {
+          setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
+      }, 35)
+
     return () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
@@ -318,11 +312,14 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
   },[character])
 
   useEffect(() => {
-    audioPlay()
+    //audioPlay()
   }, [wavUrl])
 
   useEffect(() => {
-    setCurrentIndex(0)
+    console.log(slides)
+    if (slides !== initialSlides){
+      audioPlay()
+    }
   }, [slides])
 
   return (
