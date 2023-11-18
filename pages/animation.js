@@ -299,8 +299,8 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     }
   }
 
-  const audioPlay = async() => {
-    await audioRef.current.play()
+  const audioPlay = () => {
+    audioRef.current.play()
     setCurrentIndex(0)
   }
 

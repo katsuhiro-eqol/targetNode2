@@ -59,8 +59,8 @@ setCharacter(e.target.value);
 console.log(e.target.value);
 }
 
-const audioPlay = async() => {
-    await audioRef.current.play()
+const audioPlay = () => {
+    audioRef.current.play()
     setCurrentIndex(0)
 }
 
@@ -86,7 +86,6 @@ useEffect(() => {
 }, [currentIndex]);
 
   useEffect(() => {
-    console.log("play")
     audioPlay()
   }, [wavUrl])
 

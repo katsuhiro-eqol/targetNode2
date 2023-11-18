@@ -186,7 +186,7 @@ export default function Index2() {
 
   const durationResolve = (text) => {
     const durationList = text.split("&")
-    let imageList = new Array(3).fill("Sil_00.jpg")
+    let imageList = new Array(12).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
         const child = itemList[1]
@@ -227,8 +227,8 @@ export default function Index2() {
         }
     })
     const lastImage = imageList.slice(-1)[0]
-    const arr_6 = new Array(18).fill(lastImage)
-    const arr_n3 = new Array(42).fill("Sil_00.jpg")
+    const arr_6 = new Array(12).fill(lastImage)
+    const arr_n3 = new Array(36).fill("Sil_00.jpg")
     imageList = imageList.concat(arr_6)
     imageList = imageList.concat(arr_n3)
     return imageList
@@ -295,7 +295,7 @@ const talkStart = async () => {
     console.log("No such document!");
     }
   }
-
+/*
   useEffect(() => {
     if (isSpeaking && currentIndex === slides.length-2){
         setSlides(initialSlides)
@@ -308,9 +308,18 @@ const talkStart = async () => {
         setIsSpeaking(false)
     }
 }, [currentIndex]);
+*/
+useEffect(() => {
+  if (currentIndex === slides.length-2){
+      setSlides(initialSlides)
+      setCurrentIndex(0)
+      setIsSpeaking(false)
+      setWavUrl("")
+  }
+}, [currentIndex]);
 
-  const audioPlay = async() => {
-    await audioRef.current.play()
+  const audioPlay = () => {
+    audioRef.current.play()
     setCurrentIndex(0)
   }
 
@@ -371,7 +380,6 @@ const talkStart = async () => {
         Feature-Policy: autoplay 'self' https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/
       </Head>
       <main className={styles.main}>
-
       {(wavReady) ? (
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
@@ -392,7 +400,7 @@ const talkStart = async () => {
          onChange={(e) => setUserInput(e.target.value)}
        />
      </form>
-     <div　className={styles.button_container}>
+     <div className={styles.button_container}>
           {!record ?(
             <Button className={styles.button} disabled={!wavReady} variant="outlined" onClick={sttStart}>
               <MicIcon />
@@ -404,7 +412,7 @@ const talkStart = async () => {
               入力停止
             </Button>)}
 
-          <Button className={styles.button} disabled={!canSend} variant="contained" onClick={(event) => onSubmit(event)}>
+          <Button className={styles.button} disabled={!canSend||record} variant="contained" onClick={(event) => onSubmit(event)}>
             <SendIcon />
             伝える
           </Button>

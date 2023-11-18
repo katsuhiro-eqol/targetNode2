@@ -219,7 +219,6 @@ export default function Home() {
   },[character])
 
   useEffect(() => {
-    console.log(wavUrl)
     audioPlay()
   }, [wavUrl])
 
