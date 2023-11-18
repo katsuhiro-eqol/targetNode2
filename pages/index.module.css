@@ -32,7 +32,7 @@
 .main,
 .main input {
   font-size: 16px;
-  line-height: 24px;
+  line-height: 18px;
   color: #353740;
   font-family: "ColfaxAI", Helvetica, sans-serif;
 }
@@ -69,7 +69,9 @@
 .main form {
   display: flex;
   flex-direction: column;
-  width: 370px;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
 }
 .main input[type="text"] {
   padding: 12px 16px;
@@ -167,7 +169,7 @@
 }
 .anime {
   max-width:300px;
-  width: 80%;
+  width: 70%;
   display: block;
   margin-left: auto;
   margin-right: auto;

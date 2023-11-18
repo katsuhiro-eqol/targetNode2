@@ -51,6 +51,7 @@ export default function Index2() {
   async function onSubmit(event) {
     event.preventDefault();
     setWavUrl("")
+    setRecord(false)
     setCanSend(false)//同じInputで繰り返し遅れないようにする
     setIsSpeaking(true)
     //const start = new Date().getTime()
@@ -226,8 +227,8 @@ export default function Index2() {
         }
     })
     const lastImage = imageList.slice(-1)[0]
-    const arr_6 = new Array(12).fill(lastImage)
-    const arr_n3 = new Array(48).fill("Sil_00.jpg")
+    const arr_6 = new Array(18).fill(lastImage)
+    const arr_n3 = new Array(42).fill("Sil_00.jpg")
     imageList = imageList.concat(arr_6)
     imageList = imageList.concat(arr_n3)
     return imageList
@@ -322,12 +323,6 @@ const talkStart = async () => {
   const sttStop = () => {
     setRecord(false)
     SpeechRecognition.stopListening()
-    //setUserInput(transcript)
-    //resetTranscript()
-  }
-
-  const sttReset = () => {
-    resetTranscript()
   }
 
   useEffect(() => {
@@ -343,6 +338,7 @@ const talkStart = async () => {
     return () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
+        resetTranscript()
     };
   },[])
 
@@ -398,12 +394,12 @@ const talkStart = async () => {
      </form>
      <div　className={styles.button_container}>
           {!record ?(
-            <Button className={styles.button} disabled={!wavReady} variant="contained" onClick={sttStart}>
+            <Button className={styles.button} disabled={!wavReady} variant="outlined" onClick={sttStart}>
               <MicIcon />
               音声入力
             </Button>
           ):(
-            <Button className={styles.button} variant="contained" onClick={sttStop}>
+            <Button color="secondary" className={styles.button} variant="outlined" onClick={sttStop}>
               <StopIcon />
               入力停止
             </Button>)}
