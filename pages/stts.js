@@ -312,13 +312,13 @@ useEffect(() => {
   if (currentIndex === slides.length-2){
       setSlides(initialSlides)
       setCurrentIndex(0)
-      setWavUrl("")
+      setWavUrl("no_sound")
   }
 }, [currentIndex]);
 
   const audioPlay = () => {
     audioRef.current.play()
-    setCurrentIndex(0)
+    //setCurrentIndex(0)
   }
 
   const sttStart = () => {
@@ -335,7 +335,6 @@ useEffect(() => {
   useEffect(() => {
     originalInfo()
     greetingInfo()
-    resetTranscript()
     if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
       return;
     }
@@ -362,6 +361,7 @@ useEffect(() => {
     console.log(slides)
     if (slides !== initialSlides){
       audioPlay()
+      setCurrentIndex(0)
     }
   }, [slides])
 
