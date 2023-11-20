@@ -185,7 +185,7 @@ export default function Index2() {
 
   const durationResolve = (text) => {
     const durationList = text.split("&")
-    let imageList = new Array(12).fill("Sil_00.jpg")
+    let imageList = new Array(30).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
         const child = itemList[1]
@@ -227,7 +227,7 @@ export default function Index2() {
     })
     const lastImage = imageList.slice(-1)[0]
     const arr_6 = new Array(12).fill(lastImage)
-    const arr_n3 = new Array(36).fill("Sil_00.jpg")
+    const arr_n3 = new Array(48).fill("Sil_00.jpg")
     imageList = imageList.concat(arr_6)
     imageList = imageList.concat(arr_n3)
     return imageList
@@ -354,11 +354,9 @@ useEffect(() => {
   },[character])
 
   useEffect(() => {
-    console.log(wavUrl)
   }, [wavUrl])
 
   useEffect(() => {
-    console.log(slides)
     if (slides !== initialSlides){
       audioPlay()
     }
