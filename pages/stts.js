@@ -318,7 +318,7 @@ useEffect(() => {
 
   const audioPlay = () => {
     audioRef.current.play()
-    //setCurrentIndex(0)
+    setCurrentIndex(0)
   }
 
   const sttStart = () => {
@@ -361,7 +361,6 @@ useEffect(() => {
     console.log(slides)
     if (slides !== initialSlides){
       audioPlay()
-      setCurrentIndex(0)
     }
   }, [slides])
 
