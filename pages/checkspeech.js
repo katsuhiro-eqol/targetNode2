@@ -86,12 +86,16 @@ useEffect(() => {
 }, [currentIndex]);
 
   useEffect(() => {
-    audioPlay()
+    //audioPlay()
   }, [wavUrl])
 
   useEffect(() => {
-    //animeStart()
     setCurrentIndex(0)
+    if (slides !== initialSlides){
+      audioRef.current.play().then(() => {
+        setCurrentIndex(0)
+      })
+    }
   }, [slides])
 
   return (

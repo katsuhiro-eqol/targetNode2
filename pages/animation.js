@@ -173,7 +173,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
 
   const durationResolve = (text) => {
     const durationList = text.split("&")
-    let imageList = new Array(3).fill("Sil_00.jpg")
+    let imageList = new Array(9).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
         const child = itemList[1]
@@ -316,9 +316,11 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
   }, [wavUrl])
 
   useEffect(() => {
-    console.log(slides)
+    setCurrentIndex(0)
     if (slides !== initialSlides){
-      audioPlay()
+      audioRef.current.play().then(() => {
+        setCurrentIndex(0)
+      })
     }
   }, [slides])
 

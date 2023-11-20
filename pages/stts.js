@@ -164,6 +164,7 @@ export default function Index2() {
             repeat: 1,
             status: "created by web system. non revised"
           }
+          console.log(id, sdata)
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata) 
         } else {
@@ -185,7 +186,7 @@ export default function Index2() {
 
   const durationResolve = (text) => {
     const durationList = text.split("&")
-    let imageList = new Array(30).fill("Sil_00.jpg")
+    let imageList = new Array(9).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
         const child = itemList[1]
@@ -357,8 +358,11 @@ useEffect(() => {
   }, [wavUrl])
 
   useEffect(() => {
+    setCurrentIndex(0)
     if (slides !== initialSlides){
-      audioPlay()
+      audioRef.current.play().then(() => {
+        setCurrentIndex(0)
+      })
     }
   }, [slides])
 
@@ -383,6 +387,7 @@ useEffect(() => {
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
       <div className={styles.output}>{result}</div>
+      <div>{currentIndex}</div>
       </div>
       ) : (
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
