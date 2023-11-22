@@ -133,7 +133,7 @@ const generateMessages = (input, fewShot, pre) => {
 
 const durationResolve = (text) => {
   const durationList = text.split("&")
-  let imageList = new Array(9).fill("Sil_00.jpg")
+  let imageList = new Array(12).fill("Sil_00.jpg")
   durationList.forEach((item) => {
       const itemList = item.split("-")
       const child = itemList[1]

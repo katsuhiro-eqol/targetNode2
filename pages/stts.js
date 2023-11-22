@@ -186,7 +186,7 @@ export default function Index2() {
 
   const durationResolve = (text) => {
     const durationList = text.split("&")
-    let imageList = new Array(9).fill("Sil_00.jpg")
+    let imageList = new Array(12).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
         const child = itemList[1]
@@ -232,31 +232,6 @@ export default function Index2() {
     imageList = imageList.concat(arr_6)
     imageList = imageList.concat(arr_n3)
     return imageList
-}
-
-const talkStart = async () => {
-  //暫定的にESPnetが立ち上がってなくても使えるようにする
-  setWavReady(true)
-  /*
-  try {
-    const response = await fetch("/api/dockerInit", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ character: character }),
-    });
-    const data = await response.json();
-    if (data.wav.length !== 0) {
-      setWavReady(true)
-      setResult("")
-    } else {
-      setResult(data.result)
-    }
-  } catch(error) {
-    console.log(error)
-  }
-  */
 }
 
   const selectCharacter = (e) => {
@@ -309,6 +284,37 @@ const talkStart = async () => {
     }
 }, [currentIndex]);
 */
+
+const talkStart = async () => {
+  //暫定的にESPnetが立ち上がってなくても使えるようにする
+  setWavReady(true)
+  sttStart()
+  setTimeout(() => {
+    sttStop()
+    resetTranscript()
+  }, 100);
+  /*
+  try {
+    const response = await fetch("/api/dockerInit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ character: character }),
+    });
+    const data = await response.json();
+    if (data.wav.length !== 0) {
+      setWavReady(true)
+      setResult("")
+    } else {
+      setResult(data.result)
+    }
+  } catch(error) {
+    console.log(error)
+  }
+  */
+}
+
 useEffect(() => {
   if (currentIndex === slides.length-2){
       setSlides(initialSlides)
@@ -355,6 +361,7 @@ useEffect(() => {
   },[character])
 
   useEffect(() => {
+    setCurrentIndex(0)
   }, [wavUrl])
 
   useEffect(() => {
