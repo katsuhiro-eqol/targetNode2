@@ -186,7 +186,7 @@ export default function Index2() {
 
   const durationResolve = (text) => {
     const durationList = text.split("&")
-    let imageList = new Array(12).fill("Sil_00.jpg")
+    let imageList = new Array(18).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
         const child = itemList[1]
@@ -292,7 +292,7 @@ const talkStart = async () => {
   setTimeout(() => {
     sttStop()
     resetTranscript()
-  }, 100);
+  }, 800);
   /*
   try {
     const response = await fetch("/api/dockerInit", {
@@ -394,7 +394,6 @@ useEffect(() => {
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
       <div className={styles.output}>{result}</div>
-      <div>{currentIndex}</div>
       </div>
       ) : (
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
