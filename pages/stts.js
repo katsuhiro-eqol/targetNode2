@@ -386,7 +386,6 @@ const talkStart = async () => {
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
       <div className={styles.output}>{result}</div>
       <div>{currentIndex}</div>
-      <div>{slides.length}</div>
       </div>
       ) : (
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
