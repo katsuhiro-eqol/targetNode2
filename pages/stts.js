@@ -16,7 +16,7 @@ const timestamp = Timestamp.now();
 const today = timestamp.toDate();
 
 export default function Index2() {
-  const initialSlides = new Array(300).fill("Sil_00.jpg")
+  const initialSlides = new Array(1).fill("Sil_00.jpg")
   const [character, setCharacter] = useState("silva");
   const [userInput, setUserInput] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -70,7 +70,7 @@ export default function Index2() {
       const imageList = durationResolve(preparedGreeting["duration"])
       let newS = []
       imageList.filter((value, index) => {
-          if (index%3 === 0){
+          if (index%6 === 0){
               newS.push(value)
           }
       })      
@@ -111,7 +111,9 @@ export default function Index2() {
       })
       if (setting !== ""){
         //settingない場合はfewShotを入れない（文字数を減らす）
-        fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
+        fewShot = "以下の設定に矛盾しないよう100文字以内で回答すること。設定：" + setting
+      } else {
+        fewShot = "100文字以内で回答すること。"
       }
       const pre = {input: prompt, output: result, fewShot: pfewShot}
       //post
@@ -137,7 +139,7 @@ export default function Index2() {
         setPFewShot(fewShot)
         let newS = []
         data.slides.filter((value, index) => {
-            if (index%3 === 0){
+            if (index%6 === 0){
                 newS.push(value)
             }
         })
@@ -262,7 +264,6 @@ export default function Index2() {
         const data = docSnap.data()
         console.log("Document data:", data);
         const g = Object.keys(data)
-        console.log("greetings:", g);
         setGreetings(g)
         setGInfo(data)
     } else {
@@ -270,20 +271,6 @@ export default function Index2() {
     console.log("No such document!");
     }
   }
-/*
-  useEffect(() => {
-    if (isSpeaking && currentIndex === slides.length-2){
-        setSlides(initialSlides)
-        setCurrentIndex(0)
-        setIsSpeaking(false)
-        setWavUrl("")
-    } else if (!isSpeaking && currentIndex === slides.length-2){
-        setCurrentIndex(0)
-        setSlides(initialSlides)
-        setIsSpeaking(false)
-    }
-}, [currentIndex]);
-*/
 
 const talkStart = async () => {
   //暫定的にESPnetが立ち上がってなくても使えるようにする
@@ -292,7 +279,7 @@ const talkStart = async () => {
   setTimeout(() => {
     sttStop()
     resetTranscript()
-  }, 800);
+  }, 1000);
   /*
   try {
     const response = await fetch("/api/dockerInit", {
@@ -315,14 +302,6 @@ const talkStart = async () => {
   */
 }
 
-useEffect(() => {
-  if (currentIndex === slides.length-2){
-      setSlides(initialSlides)
-      setCurrentIndex(0)
-      setWavUrl("no_sound")
-  }
-}, [currentIndex]);
-
   const audioPlay = () => {
     audioRef.current.play()
     setCurrentIndex(0)
@@ -342,13 +321,6 @@ useEffect(() => {
   useEffect(() => {
     originalInfo()
     greetingInfo()
-    if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
-      return;
-    }
-    intervalRef.current = setInterval(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
-    }, 35)
-
     return () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
@@ -366,16 +338,35 @@ useEffect(() => {
 
   useEffect(() => {
     setCurrentIndex(0)
-    if (slides !== initialSlides){
+    if (slides.length !== initialSlides.length){
+      console.log("start slides")
+      if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
+        return;
+      }
+      intervalRef.current = setInterval(() => {
+          setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
+      }, 70)
       audioRef.current.play().then(() => {
         setCurrentIndex(0)
       })
+    } else {
+      console.log("stop slides")
+      clearInterval(intervalRef.current);
+      intervalRef.current = null
     }
   }, [slides])
 
   useEffect(() => {
     setUserInput(transcript)
   }, [transcript])
+
+  useEffect(() => {
+    if (currentIndex === slides.length-2){
+        setSlides(initialSlides)
+        setCurrentIndex(0)
+        setWavUrl(no_sound)
+    }
+  }, [currentIndex]);
 
   useEffect(() => {
     if (userInput.length !== 0){
@@ -394,6 +385,8 @@ useEffect(() => {
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
       <div className={styles.output}>{result}</div>
+      <div>{currentIndex}</div>
+      <div>{slides.length}</div>
       </div>
       ) : (
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
