@@ -188,7 +188,7 @@ export default function Index2() {
 
   const durationResolve = (text) => {
     const durationList = text.split("&")
-    let imageList = new Array(18).fill("Sil_00.jpg")
+    let imageList = new Array(24).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
         const child = itemList[1]
@@ -230,9 +230,9 @@ export default function Index2() {
     })
     const lastImage = imageList.slice(-1)[0]
     const arr_6 = new Array(12).fill(lastImage)
-    const arr_n3 = new Array(48).fill("Sil_00.jpg")
+    //const arr_n3 = new Array(48).fill("Sil_00.jpg")
     imageList = imageList.concat(arr_6)
-    imageList = imageList.concat(arr_n3)
+    //imageList = imageList.concat(arr_n3)
     return imageList
 }
 
@@ -339,7 +339,6 @@ const talkStart = async () => {
   useEffect(() => {
     setCurrentIndex(0)
     if (slides.length !== initialSlides.length){
-      console.log("start slides")
       if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
         return;
       }
@@ -350,7 +349,6 @@ const talkStart = async () => {
         setCurrentIndex(0)
       })
     } else {
-      console.log("stop slides")
       clearInterval(intervalRef.current);
       intervalRef.current = null
     }
@@ -364,7 +362,7 @@ const talkStart = async () => {
     if (currentIndex === slides.length-2){
         setSlides(initialSlides)
         setCurrentIndex(0)
-        setWavUrl(no_sound)
+        setWavUrl("")
     }
   }, [currentIndex]);
 
