@@ -1,7 +1,15 @@
+//以前の会話をembeddingで参照できるようにする
+//直前の会話を参照するための関数を導入する func prompt(n)のような形
+
 import "regenerator-runtime";
 import React from "react";
 import Head from "next/head";
 import { useState, useEffect, useRef } from "react";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import Button from '@mui/material/Button';
+import MicIcon from '@mui/icons-material/Mic';
+import SendIcon from '@mui/icons-material/Send';
+import StopIcon from '@mui/icons-material/Stop';
 import { db } from "../lib/FirebaseConfig";
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import styles from "./index.module.css";
@@ -10,14 +18,14 @@ const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-3945
 const timestamp = Timestamp.now();
 const today = timestamp.toDate();
 
-
-export default function Animation() {
-const initialSlides = new Array(300).fill("Sil_00.jpg")
+export default function STTS2() {
+  const initialSlides = new Array(1).fill("Sil_00.jpg")
   const [character, setCharacter] = useState("silva");
   const [userInput, setUserInput] = useState("");
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState("");
   const [pfewShot, setPFewShot] = useState(""); //ひとつ前のfewShot
+  const [previousData, setPreviousData] = useState([])//変更部分。5会話前までを配列で記録する
   const [items, setItems] = useState([]) //固有名詞リスト
   const [info, setInfo] = useState({}) //固有名詞情報
   const [greetings, setGreetings] = useState([]) //定型QAリスト
@@ -26,9 +34,10 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
   const [wavUrl, setWavUrl] = useState(no_sound);
   const [slides, setSlides] = useState(initialSlides)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [wavReady, setWavReady] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [started, setStarted] = useState(false)
+  const [wavReady, setWavReady] = useState(false)
+  const [record,setRecord] = useState(false)
+  const [canSend, setCanSend] = useState(false)
   const audioRef = useRef(null)
   const intervalRef = useRef(null)
   const characters = ["silva", "setto"];
@@ -36,11 +45,18 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
   const scaList = {silva: "1.0", setto: "1.2"}
   const selfwords = ["貴方", "あなた", "君"]
   const user = "tester" //登録情報より取得
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
 
   async function onSubmit(event) {
     event.preventDefault();
     setWavUrl("")
-    setIsSpeaking(true)
+    setRecord(false)
+    setCanSend(false)//同じInputで繰り返し送れないようにする
     //const start = new Date().getTime()
     setPrompt(userInput)
     setResult("応答を待ってます・・・")
@@ -58,7 +74,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
       const imageList = durationResolve(preparedGreeting["duration"])
       let newS = []
       imageList.filter((value, index) => {
-          if (index%3 === 0){
+          if (index%6 === 0){
               newS.push(value)
           }
       })      
@@ -70,6 +86,8 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
       setTimeout(() => {
         setResult(preparedGreeting["output"])
       }, 3700);
+      /*
+      定型挨拶はConversationsに登録しない。
       const convRef = doc(db, "Conversations", user)
       const cdata = {
         character: character,
@@ -78,7 +96,8 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
         date: today
       }
       updateDoc(convRef, {conversation: arrayUnion(cdata)})   
-      setUserInput("")    
+      */
+      //setUserInput("")    
       //ここまで定型応答。以下はopenAIに投げる。
     } else {
       let setting = ""
@@ -99,9 +118,22 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
       })
       if (setting !== ""){
         //settingない場合はfewShotを入れない（文字数を減らす）
-        fewShot = "以下の設定に矛盾しないよう回答すること。設定：" + setting
+        fewShot = "以下の設定に矛盾しないよう100文字以内で回答すること。設定：" + setting
+      } else {
+        fewShot = "100文字以内で回答すること。"
       }
+      //前回の入出力をpreviousDataに追加する
       const pre = {input: prompt, output: result, fewShot: pfewShot}
+      if (previousData.length === 5){
+        const updatePreData = previousData.unshift(pre)
+        updatePreData.pop()
+        setPreviousData(updatePreData)
+      } else {
+        const updatePreData = previousData.unshift(pre)
+        setPreviousData(updatePreData)
+      }
+      
+      
       //post
       try {
         const response = await fetch("/api/generate2", {
@@ -109,7 +141,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, pre: pre, sca: scaList[character] }),
+          body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, previousData: previousData, sca: scaList[character] }),
         });
   
         const data = await response.json();
@@ -125,21 +157,44 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
         setPFewShot(fewShot)
         let newS = []
         data.slides.filter((value, index) => {
-            if (index%3 === 0){
+            if (index%6 === 0){
                 newS.push(value)
             }
         })
         if (newS.length >0){
             setSlides(newS)
         }
-        const convRef = doc(db, "Conversations", user)
-        const cdata = {
-          character: character,
-          input: data.prompt,
-          output: data.result,
-          date: today
+        //embedding
+        try {
+            const text = "user:" + prompt + ",assistant:" + result
+            const response = await fetch("/api/embedding", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({conversation:text}),
+            });
+            const data2 = await response.json();
+            const embedding = data2.embedding
+            const convRef = doc(db, "Conversations", user)
+            const cdata = {
+              input: data.prompt,
+              output: data.result,
+              date: today,
+              embedding: embedding
+            }
+            updateDoc(convRef, {[character]: arrayUnion(cdata)})     
+        } catch (error) {
+            const convRef = doc(db, "Conversations", user)
+            const cdata = {
+              input: data.prompt,
+              output: data.result,
+              date: today,
+            }
+            updateDoc(convRef, {[character]: arrayUnion(cdata)})   
         }
-        updateDoc(convRef, {conversation: arrayUnion(cdata)}) 
+        //ここまで
+
         if (data.repeat == 1){
           const id = character + "-" + data.hash
           const filename = data.hash + ".wav"
@@ -152,6 +207,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
             repeat: 1,
             status: "created by web system. non revised"
           }
+          console.log(id, sdata)
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata) 
         } else {
@@ -163,7 +219,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata, {merge:true}) 
         }
-        setUserInput("");
+        //setUserInput("");
       } catch(error) {
         console.error(error);
         alert(error.message);
@@ -173,7 +229,7 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
 
   const durationResolve = (text) => {
     const durationList = text.split("&")
-    let imageList = new Array(18).fill("Sil_00.jpg")
+    let imageList = new Array(24).fill("Sil_00.jpg")
     durationList.forEach((item) => {
         const itemList = item.split("-")
         const child = itemList[1]
@@ -215,44 +271,11 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     })
     const lastImage = imageList.slice(-1)[0]
     const arr_6 = new Array(12).fill(lastImage)
-    const arr_n3 = new Array(48).fill("Sil_00.jpg")
+    //const arr_n3 = new Array(48).fill("Sil_00.jpg")
     imageList = imageList.concat(arr_6)
-    imageList = imageList.concat(arr_n3)
+    //imageList = imageList.concat(arr_n3)
     return imageList
 }
-
-  const talkStart = async () => {
-    setWavReady(true)
-    /*
-    setResult("キャラクターと接続中です")
-    try {
-      const response = await fetch("/api/dockerInit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ character: character }),
-      });
-      const data = await response.json();
-      if (data.wav.length !== 0) {
-        setWavReady(true)
-        setResult("")
-      } else {
-        setResult(data.result)
-      }
-    } catch(error) {
-      console.log(error)
-    }
-    */
-  }
-
-  useEffect(() => {
-    if (currentIndex === slides.length-2){
-        setSlides(initialSlides)
-        setCurrentIndex(0)
-        setWavUrl("")
-    }
-  }, [currentIndex]);
 
   const selectCharacter = (e) => {
     setCharacter(e.target.value);
@@ -264,7 +287,9 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         const data = docSnap.data()
+        console.log("Document data:", data);
         const items = Object.keys(data)
+        console.log("items:", items);
         setItems(items)
         setInfo(data)
     } else {
@@ -275,8 +300,10 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
   const greetingInfo = async() => {
     const docRef = doc(db, "Greeting", character);
     const docSnap = await getDoc(docRef);
+
     if (docSnap.exists()) {
         const data = docSnap.data()
+        console.log("Document data:", data);
         const g = Object.keys(data)
         setGreetings(g)
         setGInfo(data)
@@ -286,24 +313,59 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
     }
   }
 
+const talkStart = async () => {
+  //暫定的にESPnetが立ち上がってなくても使えるようにする
+  setWavReady(true)
+  sttStart()
+  setTimeout(() => {
+    sttStop()
+    resetTranscript()
+  }, 1000);
+  /*
+  try {
+    const response = await fetch("/api/dockerInit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ character: character }),
+    });
+    const data = await response.json();
+    if (data.wav.length !== 0) {
+      setWavReady(true)
+      setResult("")
+    } else {
+      setResult(data.result)
+    }
+  } catch(error) {
+    console.log(error)
+  }
+  */
+}
+
   const audioPlay = () => {
     audioRef.current.play()
     setCurrentIndex(0)
   }
 
+  const sttStart = () => {
+    setUserInput("")
+    setRecord(true)
+    SpeechRecognition.startListening()
+  }
+
+  const sttStop = () => {
+    setRecord(false)
+    SpeechRecognition.stopListening()
+  }
+
   useEffect(() => {
     originalInfo()
     greetingInfo()
-    if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
-        return;
-      }
-      intervalRef.current = setInterval(() => {
-          setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
-      }, 35)
-
     return () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
+        resetTranscript()
     };
   },[])
 
@@ -312,17 +374,44 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
   },[character])
 
   useEffect(() => {
-    //audioPlay()
+    setCurrentIndex(0)
   }, [wavUrl])
 
   useEffect(() => {
     setCurrentIndex(0)
-    if (slides !== initialSlides){
+    if (slides.length !== initialSlides.length){
+      if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
+        return;
+      }
+      intervalRef.current = setInterval(() => {
+          setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
+      }, 70)
       audioRef.current.play().then(() => {
         setCurrentIndex(0)
       })
+    } else {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null
     }
   }, [slides])
+
+  useEffect(() => {
+    setUserInput(transcript)
+  }, [transcript])
+
+  useEffect(() => {
+    if (currentIndex === slides.length-2){
+        setSlides(initialSlides)
+        setCurrentIndex(0)
+        setWavUrl("")
+    }
+  }, [currentIndex]);
+
+  useEffect(() => {
+    if (userInput.length !== 0){
+      setCanSend(true)
+    }
+  }, [userInput])
 
   return (
     <div>
@@ -331,15 +420,17 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
         Feature-Policy: autoplay 'self' https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/
       </Head>
       <main className={styles.main}>
-      <div>
-      {(wavReady) ? (<img className={styles.anime} src={slides[currentIndex]} alt="Image" />) : (
+      {(wavReady) ? (
+      <div className={styles.image_container}>
+      <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
+      <div className={styles.output}>{result}</div>
+      <div>{currentIndex}</div>
+      </div>
+      ) : (
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
         )}
-      </div>    
       {wavReady && (
-        <div className={styles.bottom_items}>
-        <div className={styles.result}>{prompt}</div>
-        <div className={styles.result}>{result}</div>        
+      <div className={styles.bottom_items}>
        <form onSubmit={onSubmit}>
        <textarea
          type="text"
@@ -349,11 +440,26 @@ const initialSlides = new Array(300).fill("Sil_00.jpg")
          value={userInput}
          onChange={(e) => setUserInput(e.target.value)}
        />
-       <input disabled={!wavReady} type="submit" value="伝える" />
      </form>
+     <div className={styles.button_container}>
+          {!record ?(
+            <Button className={styles.button} disabled={!wavReady} variant="outlined" onClick={sttStart}>
+              <MicIcon />
+              音声入力
+            </Button>
+          ):(
+            <Button color="secondary" className={styles.button} variant="outlined" onClick={sttStop}>
+              <StopIcon />
+              入力停止
+            </Button>)}
+
+          <Button className={styles.button} disabled={!canSend||record} variant="contained" onClick={(event) => onSubmit(event)}>
+            <SendIcon />
+            伝える
+          </Button>
+        </div>
      </div>
       )}
-        <div className={styles.none}>{pfewShot}</div>
         <audio src={wavUrl} ref={audioRef}/>
         <div className={styles.none}>{wavUrl}</div>
       </main>

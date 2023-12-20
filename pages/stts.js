@@ -82,6 +82,8 @@ export default function Index2() {
       setTimeout(() => {
         setResult(preparedGreeting["output"])
       }, 3700);
+      /*
+      定型挨拶はConversationsに登録しない。
       const convRef = doc(db, "Conversations", user)
       const cdata = {
         character: character,
@@ -90,6 +92,7 @@ export default function Index2() {
         date: today
       }
       updateDoc(convRef, {conversation: arrayUnion(cdata)})   
+      */
       //setUserInput("")    
       //ここまで定型応答。以下はopenAIに投げる。
     } else {
@@ -118,7 +121,7 @@ export default function Index2() {
       const pre = {input: prompt, output: result, fewShot: pfewShot}
       //post
       try {
-        const response = await fetch("/api/generate2", {
+        const response = await fetch("/api/generate", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

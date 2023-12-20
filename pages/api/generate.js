@@ -1,5 +1,3 @@
-//sttsに対応。句読点を除去し、スペースで置き換えた文章を音声合成する
-
 import axios from 'axios';
 import { storage, db } from "../../lib/FirebaseConfig";
 import { ref, getDownloadURL} from "firebase/storage";
@@ -32,7 +30,7 @@ export default async function (req, res) {
   const userInput = req.body.input || '';
   const character = req.body.character;
   const fewShot = req.body.fewShot;
-  const previousData = req.body.previousData;
+  const pre = req.body.pre;
   const sca = req.body.sca;
   console.log(sca)
 
@@ -47,18 +45,15 @@ export default async function (req, res) {
 
   try {
     const completion = await openai.chat.completions.create({
-      messages: generateMessages(userInput, fewShot, previousData, 3),//直前3会話を参照する
+      messages: generateMessages(userInput, fewShot, pre),
       model: finetuned_model[character],
       max_tokens: 80,
       stop: "\n",
       temperature: 0.4,
     });
     const resultString = completion.choices[0].message.content.trim()
-    //句読点、？、！、・などをスペースに変換
-    audioString = processedString(resultString)
-    console.log("audioString: ", audioString)
     //resultStringをsha512でハッシュ化
-    const hashString = md5(audioString)
+    const hashString = md5(resultString)
     const id = character + "-" + hashString
 
     //音声ファイルが存在するかどうか確認
@@ -116,27 +111,8 @@ export default async function (req, res) {
   }
 }
 
-const generateMessages = (input, fewShot, previousData, n) => {
-  //直前n会話をpromptに使用する
+const generateMessages = (input, fewShot, pre) => {
   let messages = []
-  const m = previousData.length
-  if (m > n) {
-    messages.push({"role": "system", "content": fewShot})
-    previousData.slice(n,m-n)
-    previousData.map((item) => {
-      messages.push({"role": "user", "content": item.input})
-      messages.push({"role": "assistant", "content": item.output})
-    })
-    messages.push({"role": "user", "content": input})
-  } else {
-    messages.push({"role": "system", "content": fewShot})
-    previousData.map((item) => {
-      messages.push({"role": "user", "content": item.input})
-      messages.push({"role": "assistant", "content": item.output})
-    })
-    messages.push({"role": "user", "content": input})    
-  }
-/*
   if (pre.output != "") {
     messages = [
       //preのfewShotは使わない。systemひとつに対してuserとassistantの会話が続く
@@ -151,7 +127,6 @@ const generateMessages = (input, fewShot, previousData, n) => {
       {"role": "user", "content": input}   
     ]   
   }
-  */
   console.log(messages)
   return messages
 }
@@ -202,14 +177,4 @@ const durationResolve = (text) => {
   const arr_6 = new Array(12).fill(lastImage)
   imageList = imageList.concat(arr_6)
   return imageList
-}
-
-const processedString = (text) => {
-  let newText
-  const targetCharacter = ["。", "、", "？", "?", "！","!", "・", "＜", "<", "＞", ">"]
-  targetCharacter.map((item) => {
-    newText = newText.replace(item, " ")
-  })
-  newText = newText.trim()
-  return newText
 }

@@ -87,7 +87,7 @@ export default function Home() {
       
       const pre = {input: prompt, output: result, fewShot: pfewShot, sca: scaList[character]}
       try {
-        const response = await fetch("/api/generate2", {
+        const response = await fetch("/api/generate", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
