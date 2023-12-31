@@ -209,7 +209,7 @@ const talkStart = async () => {
       {(wavReady) ? (
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
-      <div className={styles.output}>{result}</div>
+      <div className={styles.output} onClick={() => {audioPlay(); isExistFile(wavUrl)}}>{result}</div>
       <div className={styles.none}>{currentIndex}</div>
       </div>
       ) : (
