@@ -83,21 +83,21 @@ export default function Index2() {
     }
   }
 
-  const isExistFile = async (filename) => {
+  const isExistFile = async (path) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const response = await fetch(filename);
+            const response = await fetch(path + wavUrl);
             if (response.status === 200) {
-              console.log('ファイルは存在します。');
+              console.log(path, ': ファイルは存在します。');
               // ファイルが存在する場合、resolve(0)で解決します
               resolve(0);
             } else {
-              console.log('ファイルは存在しません。');
+              console.log(path, ':ファイルは存在しません。');
               // ファイルが存在しない場合、reject(1)で拒絶する。
               reject(1);
             }
           } catch (error) {
-            console.error('エラーが発生しました:', error);
+            console.error(path, ':エラーが発生しました:', error);
             // エラーの場合reject(error)を返す
             reject(error);
           }
@@ -152,7 +152,11 @@ const talkStart = async () => {
 
   useEffect(() => {
     console.log("wav:", wavUrl)
-    isExistFile(wavUrl)
+    isExistFile("/")
+    isExistFile("./")
+    isExistFile("public/")
+    isExistFile("./public/")
+    isExistFile("/opt/render/project/src/public/")
     audioRef.current.play().then(() => {
         setSlides(prepareSlides(audioRef.current.duration))
         console.log(audioRef.current.duration)
@@ -169,7 +173,6 @@ const talkStart = async () => {
           setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
       }, 200)
       console.log("slides")
-      isExistFile(wavUrl)
     } else {
       clearInterval(intervalRef.current);
       intervalRef.current = null
@@ -196,7 +199,6 @@ const talkStart = async () => {
 
   useEffect(() => {
     console.log(history)
-    isExistFile(wavUrl)
   }, [history])
 
   return (
