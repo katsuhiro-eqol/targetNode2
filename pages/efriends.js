@@ -67,7 +67,7 @@ export default function Index2() {
     if (response.status !== 200) {
         throw data.error || new Error(`Request failed with status ${response.status}`);
     }
-    setWavUrl("output.mp3");
+    setWavUrl(data.audio);
     setResult("・・・")
     setPrompt(data.prompt)
     setTimeout(() => {
