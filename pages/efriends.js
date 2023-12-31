@@ -168,6 +168,8 @@ const talkStart = async () => {
       intervalRef.current = setInterval(() => {
           setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
       }, 200)
+      console.log("slides")
+      isExistFile(wavUrl)
     } else {
       clearInterval(intervalRef.current);
       intervalRef.current = null
@@ -194,6 +196,7 @@ const talkStart = async () => {
 
   useEffect(() => {
     console.log(history)
+    isExistFile(wavUrl)
   }, [history])
 
   return (
