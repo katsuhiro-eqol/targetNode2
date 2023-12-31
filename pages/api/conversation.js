@@ -23,6 +23,7 @@ export default async function (req, res) {
       return;
     }
 
+    /*
     const audioFile = "public/" + user + "*.mp3"
     fs.readdir("public/", (err, files) => {
         files.forEach(file => {
@@ -32,6 +33,7 @@ export default async function (req, res) {
             }
         });
     });
+    */
 
     try {
       const completion = await openai.chat.completions.create({
@@ -51,13 +53,13 @@ export default async function (req, res) {
             // select the type of audio encoding
             audioConfig: {audioEncoding: 'MP3'},
         };
-        const filename = user + Math.random().toString(32).substring(2) + ".mp3"
+        //const filename = user + Math.random().toString(32).substring(2) + ".mp3"
         // Performs the text-to-speech request
         const [response] = await client.synthesizeSpeech(request);
         // Write the binary audio content to a local file
         const writeFile = util.promisify(fs.writeFile);
-        await writeFile("public/" + filename, response.audioContent, 'binary');
-        res.status(200).json({ prompt: userInput, result: resultText, audio: filename });
+        await writeFile("public/output.mp3", response.audioContent, 'binary');
+        res.status(200).json({ prompt: userInput, result: resultText, audio: "output.mp3" });
       } catch(error) {
         console.log(error)
       }
