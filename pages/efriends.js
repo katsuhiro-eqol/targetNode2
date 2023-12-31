@@ -18,6 +18,7 @@ const today = timestamp.toDate();
 export default function Index2() {
   const initialSlides = new Array(1).fill("Sil_00.jpg")
   const slideOption = ["Sil_00.jpg","Sil_01-A.jpg","Sil_02-I.jpg","Sil_03-U-O.jpg","Sil_04-E.jpg","Sil_03-U-O.jpg"]
+  const [user, setUser] = useState("user1")
   const [userInput, setUserInput] = useState("")
   const [prompt, setPrompt] = useState("")
   const [result, setResult] = useState("")
@@ -25,7 +26,6 @@ export default function Index2() {
   const [wavUrl, setWavUrl] = useState(no_sound);
   const [slides, setSlides] = useState(initialSlides)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isSpeaking, setIsSpeaking] = useState(false)
   const [wavReady, setWavReady] = useState(false)
   const [record,setRecord] = useState(false)
   const [canSend, setCanSend] = useState(false)
@@ -45,7 +45,7 @@ export default function Index2() {
     setRecord(false)
     setCanSend(false)//同じInputで繰り返し遅れないようにする
     setPrompt(userInput)
-    setResult("応答を待ってます・・・")
+    setResult("waiting....")
     const setting = "You are English teacher living in Japan.Answer within 25 words"
     let refer = []
     if (history.length < 6){
@@ -60,21 +60,21 @@ export default function Index2() {
         headers: {
         "Content-Type": "application/json",
         },
-        body: JSON.stringify({ input: userInput, setting: setting, history: refer }),
+        body: JSON.stringify({ input: userInput, setting: setting, history: refer, user: user }),
     });
 
     const data = await response.json();
     if (response.status !== 200) {
         throw data.error || new Error(`Request failed with status ${response.status}`);
     }
-    setWavUrl("output.mp3");
+    setWavUrl(data.audio);
     setResult("・・・")
     setPrompt(data.prompt)
     setTimeout(() => {
         setResult(data.result) 
     }, 5000);
-    let updates = history
-    updates = updates.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
+
+    const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
     setHistory(updates)
     //console.log(history)
     } catch(error) {
@@ -130,7 +130,7 @@ const talkStart = async () => {
   },[])
 
   useEffect(() => {
-    //setCurrentIndex(0)
+    console.log("wav:", wavUrl)
     audioRef.current.play().then(() => {
         setSlides(prepareSlides(audioRef.current.duration))
         console.log(audioRef.current.duration)
@@ -146,11 +146,6 @@ const talkStart = async () => {
       intervalRef.current = setInterval(() => {
           setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
       }, 200)
-      /*
-      audioRef.current.play().then(() => {
-        setCurrentIndex(0)
-      })
-      */
     } else {
       clearInterval(intervalRef.current);
       intervalRef.current = null
@@ -165,7 +160,7 @@ const talkStart = async () => {
     if (currentIndex === slides.length-2){
         setSlides(initialSlides)
         setCurrentIndex(0)
-        setWavUrl("")
+        //setWavUrl("")
     }
   }, [currentIndex]);
 
@@ -182,7 +177,7 @@ const talkStart = async () => {
   return (
     <div>
       <Head>
-        <title>はめフラトーク</title>
+        <title>e-friends</title>
         Feature-Policy: autoplay 'self' https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/
       </Head>
       <main className={styles.main}>
@@ -190,10 +185,10 @@ const talkStart = async () => {
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
       <div className={styles.output}>{result}</div>
-      <div>{currentIndex}</div>
+      <div className={styles.none}>{currentIndex}</div>
       </div>
       ) : (
-          <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
+          <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>start</button>
         )}
       {wavReady && (
       <div className={styles.bottom_items}>
@@ -201,7 +196,7 @@ const talkStart = async () => {
        <textarea
          type="text"
          name="message"
-         placeholder="伝える内容"
+         placeholder="your message"
          rows="2"
          value={userInput}
          onChange={(e) => setUserInput(e.target.value)}
@@ -211,17 +206,17 @@ const talkStart = async () => {
           {!record ?(
             <Button className={styles.button} disabled={!wavReady} variant="outlined" onClick={sttStart}>
               <MicIcon />
-              音声入力
+              vioce
             </Button>
           ):(
             <Button color="secondary" className={styles.button} variant="outlined" onClick={sttStop}>
               <StopIcon />
-              入力停止
+              stop
             </Button>)}
 
           <Button className={styles.button} disabled={!canSend||record} variant="contained" onClick={(event) => onSubmit(event)}>
             <SendIcon />
-            伝える
+            send
           </Button>
         </div>
      </div>
