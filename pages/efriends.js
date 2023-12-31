@@ -83,16 +83,16 @@ export default function Index2() {
     }
   }
 
-  const isExistFile = async (path) => {
+  const isExistFile = async (path, file) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const response = await fetch(path + wavUrl);
+            const response = await fetch(path + file);
             if (response.status === 200) {
-              console.log(path, ': ファイルは存在します。');
+              console.log(path + file, ': ファイルは存在します。');
               // ファイルが存在する場合、resolve(0)で解決します
               resolve(0);
             } else {
-              console.log(path, ':ファイルは存在しません。');
+              console.log(path + file, ':ファイルは存在しません。');
               // ファイルが存在しない場合、reject(1)で拒絶する。
               reject(1);
             }
@@ -152,11 +152,6 @@ const talkStart = async () => {
 
   useEffect(() => {
     console.log("wav:", wavUrl)
-    isExistFile("/")
-    isExistFile("./")
-    isExistFile("public/")
-    isExistFile("./public/")
-    isExistFile("/opt/render/project/src/public/")
     audioRef.current.play().then(() => {
         setSlides(prepareSlides(audioRef.current.duration))
         console.log(audioRef.current.duration)
@@ -199,6 +194,18 @@ const talkStart = async () => {
 
   useEffect(() => {
     console.log(history)
+    isExistFile("",wavUrl)
+    isExistFile("/",wavUrl)
+    isExistFile("./", wavUrl)
+    isExistFile("public/", wavUrl)
+    isExistFile("./public/",wavUrl)
+    isExistFile("/opt/render/project/src/public/",wavUrl)
+    isExistFile("","Sil_00.jpg")
+    isExistFile("/","Sil_00.jpg")
+    isExistFile("./", "Sil_00.jpg")
+    isExistFile("public/","Sil_00.jpg")
+    isExistFile("./public/","Sil_00.jpg")
+    isExistFile("/opt/render/project/src/public/","Sil_00.jpg")
   }, [history])
 
   return (
