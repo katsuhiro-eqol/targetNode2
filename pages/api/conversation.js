@@ -23,7 +23,6 @@ export default async function (req, res) {
       return;
     }
 
-    const audioFile = "public/" + user + "*.mp3"
     fs.readdir("public/", (err, files) => {
         files.forEach(file => {
             if (file.includes(user)){

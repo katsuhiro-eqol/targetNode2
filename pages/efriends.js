@@ -83,6 +83,27 @@ export default function Index2() {
     }
   }
 
+  const isExistFile = async (filename) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const response = await fetch(filename);
+            if (response.status === 200) {
+              console.log('ファイルは存在します。');
+              // ファイルが存在する場合、resolve(0)で解決します
+              resolve(0);
+            } else {
+              console.log('ファイルは存在しません。');
+              // ファイルが存在しない場合、reject(1)で拒絶する。
+              reject(1);
+            }
+          } catch (error) {
+            console.error('エラーが発生しました:', error);
+            // エラーの場合reject(error)を返す
+            reject(error);
+          }
+    })
+  }
+
   const prepareSlides = (duration) => {
     const slideCount = Math.round(duration / 0.2)
     const arr0 = new Array(5).fill("Sil_00.jpg")
@@ -131,6 +152,7 @@ const talkStart = async () => {
 
   useEffect(() => {
     console.log("wav:", wavUrl)
+    isExistFile(wavUrl)
     audioRef.current.play().then(() => {
         setSlides(prepareSlides(audioRef.current.duration))
         console.log(audioRef.current.duration)
