@@ -14,6 +14,7 @@ import styles from "./index.module.css";
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
 const timestamp = Timestamp.now();
 const today = timestamp.toDate();
+const ttsApiKey = process.env.NEXT_PUBLIC_GOOGLE_TTS_API_KEY
 
 export default function Index2() {
   const initialSlides = new Array(1).fill("Sil_00.jpg")
@@ -67,7 +68,9 @@ export default function Index2() {
     if (response.status !== 200) {
         throw data.error || new Error(`Request failed with status ${response.status}`);
     }
-    setWavUrl(data.audio);
+
+    //setWavUrl(data.audio);
+    googleTTS(data.result)
     setResult("・・・")
     setPrompt(data.prompt)
     setTimeout(() => {
@@ -83,27 +86,55 @@ export default function Index2() {
     }
   }
 
-  const isExistFile = async (path, file) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const response = await fetch(path + file);
-            if (response.status === 200) {
-              console.log(path + file, ': ファイルは存在します。');
-              // ファイルが存在する場合、resolve(0)で解決します
-              resolve(0);
-            } else {
-              console.log(path + file, ':ファイルは存在しません。');
-              // ファイルが存在しない場合、reject(1)で拒絶する。
-              reject(1);
-            }
-          } catch (error) {
-            console.error(path, ':エラーが発生しました:', error);
-            // エラーの場合reject(error)を返す
-            reject(error);
-          }
+  const googleTTS = async (result) => {
+    const audio = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key='+ ttsApiKey, {  // ご自身のAPI-Keyを入れてください。
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+        input: {
+            text: result,
+        },
+        voice: {
+            languageCode: 'en-US',
+            ssmlGender: 'NEUTRAL',
+        },
+        audioConfig: {
+            audioEncoding: 'MP3',
+            speakingRate: '1.25',
+        },
+        }),
     })
+    const audio_data = await audio.json();
+
+    if (audio_data.audioContent) {
+      const audioBlob = base64ToBlob(audio_data.audioContent, 'audio/mp3');
+      const audioUrl = URL.createObjectURL(audioBlob);
+      setWavUrl(audioUrl);
+    }
   }
 
+  function base64ToBlob(base64Data, contentType) {
+    const byteCharacters = atob(base64Data);
+    const byteArrays = [];
+  
+    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+      const slice = byteCharacters.slice(offset, offset + 512);
+  
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+  
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
+    }
+  
+    const blob = new Blob(byteArrays, { type: contentType });
+    return blob;
+  }
+  
   const prepareSlides = (duration) => {
     const slideCount = Math.round(duration / 0.2)
     const arr0 = new Array(5).fill("Sil_00.jpg")
@@ -131,6 +162,13 @@ const talkStart = async () => {
     setCurrentIndex(0)
   }
 
+  const audioAndSlidePlay = () => {
+    audioRef.current.play().then(() => {
+        setSlides(prepareSlides(audioRef.current.duration))
+        console.log(audioRef.current.duration)
+    })
+  }
+
   const sttStart = () => {
     setUserInput("")
     setRecord(true)
@@ -152,10 +190,7 @@ const talkStart = async () => {
 
   useEffect(() => {
     console.log("wav:", wavUrl)
-    audioRef.current.play().then(() => {
-        setSlides(prepareSlides(audioRef.current.duration))
-        console.log(audioRef.current.duration)
-    })
+    audioAndSlidePlay()
   }, [wavUrl])
 
   useEffect(() => {
@@ -167,7 +202,6 @@ const talkStart = async () => {
       intervalRef.current = setInterval(() => {
           setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
       }, 200)
-      console.log("slides")
     } else {
       clearInterval(intervalRef.current);
       intervalRef.current = null
@@ -194,18 +228,6 @@ const talkStart = async () => {
 
   useEffect(() => {
     console.log(history)
-    isExistFile("",wavUrl)
-    isExistFile("/",wavUrl)
-    isExistFile("./", wavUrl)
-    isExistFile("public/", wavUrl)
-    isExistFile("./public/",wavUrl)
-    isExistFile("/opt/render/project/src/public/",wavUrl)
-    isExistFile("","Sil_00.jpg")
-    isExistFile("/","Sil_00.jpg")
-    isExistFile("./", "Sil_00.jpg")
-    isExistFile("public/","Sil_00.jpg")
-    isExistFile("./public/","Sil_00.jpg")
-    isExistFile("/opt/render/project/src/public/","Sil_00.jpg")
   }, [history])
 
   return (
@@ -218,11 +240,14 @@ const talkStart = async () => {
       {(wavReady) ? (
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
-      <div className={styles.output} onClick={() => {audioPlay(); isExistFile(wavUrl)}}>{result}</div>
+      <div className={styles.output} onClick={() => {audioAndSlidePlay()}}>{result}</div>
       <div className={styles.none}>{currentIndex}</div>
       </div>
       ) : (
+        <div className={styles.image_container}>
+        <h3>e-Friends</h3>
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>start</button>
+        </div>
         )}
       {wavReady && (
       <div className={styles.bottom_items}>

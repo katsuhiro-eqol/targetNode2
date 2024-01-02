@@ -1,8 +1,5 @@
 //英会話練習用のapi
 import OpenAI from "openai";
-import textToSpeech from "@google-cloud/text-to-speech"
-import fs from "fs";
-import util from "util";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -13,7 +10,6 @@ export default async function (req, res) {
     const setting = req.body.setting
     const history = req.body.history
     const user = req.body.user
-    console.log(history)
     if (userInput.length === 0) {
       res.status(400).json({
         error: {
@@ -22,17 +18,6 @@ export default async function (req, res) {
       });
       return;
     }
-
-    fs.readdir("public/", (err, files) => {
-        files.forEach(file => {
-            if (file.includes(user)){
-                console.log(file)
-                fs.unlinkSync("public/" + file)
-            }
-        });
-    });
-
-
     try {
       const completion = await openai.chat.completions.create({
         messages: generateMessages(userInput, setting, history),
@@ -42,25 +27,8 @@ export default async function (req, res) {
         temperature: 0.4,
       });
       const resultText = completion.choices[0].message.content
-      try {
-        const client = new textToSpeech.TextToSpeechClient();
-        const request = {
-            input: {text: resultText},
-            // Select the language and SSML voice gender (optional)
-            voice: {languageCode: 'en-US', ssmlGender: 'NEUTRAL'},
-            // select the type of audio encoding
-            audioConfig: {audioEncoding: 'MP3'},
-        };
-        const filename = user + Math.random().toString(32).substring(2) + ".mp3"
-        // Performs the text-to-speech request
-        const [response] = await client.synthesizeSpeech(request);
-        // Write the binary audio content to a local file
-        const writeFile = util.promisify(fs.writeFile);
-        await writeFile("public/" + filename, response.audioContent, 'binary');
-        res.status(200).json({ prompt: userInput, result: resultText, audio: filename});
-      } catch(error) {
-        console.log(error)
-      }
+      res.status(200).json({ prompt: userInput, result: resultText});
+
     } catch(error) {
           // Consider adjusting the error handling logic for your use case
           if (error.response) {
@@ -75,13 +43,11 @@ export default async function (req, res) {
             });
         }
     }
-
   }
   
   function generateMessages(input, setting, history) {
     let messages = [{"role": "system", "content": setting}]
     messages = messages.concat(history)
     messages = messages.concat([{"role": "user", "content": input}])
-    console.log(messages)
     return messages
   }
