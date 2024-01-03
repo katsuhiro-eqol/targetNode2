@@ -29,6 +29,11 @@
   text-align: center;
   margin-left: 20px;;
 }
+.main .select3 {
+  font-size: 16px;
+  text-align: center;
+  margin-left: 20px;;
+}
 .main,
 .main input {
   font-size: 16px;
@@ -130,7 +135,7 @@
   color: blue;
 }
 .main .button {
-  margin: 10pt;
+  margin: 50pt;
   font-size: 18px;
 }
 .main .button1 {

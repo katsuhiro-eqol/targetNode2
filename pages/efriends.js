@@ -30,8 +30,10 @@ export default function Index2() {
   const [wavReady, setWavReady] = useState(false)
   const [record,setRecord] = useState(false)
   const [canSend, setCanSend] = useState(false)
+  const [yourLanguage, setYourLanguage] = useState("en-US")
   const audioRef = useRef(null)
   const intervalRef = useRef(null)
+  const yourLanguages = ["en-US", "ja-JP"]
 
   const {
     transcript,
@@ -47,7 +49,12 @@ export default function Index2() {
     setCanSend(false)//同じInputで繰り返し遅れないようにする
     setPrompt(userInput)
     setResult("waiting....")
-    const setting = "You are English teacher living in Japan.Answer within 25 words"
+    let setting = ""
+    if (yourLanguage == 'ja-JP'){
+        setting = "You understand but never use Japanese.Answer in English within 25 words"
+    } else {
+        setting = "You are English teacher living in Japan.Answer within 25 words"
+    }
     let refer = []
     if (history.length < 6){
         refer = history
@@ -157,6 +164,11 @@ const talkStart = async () => {
   }, 1000);
 }
 
+const selectYourLanguage = (e) => {
+    setYourLanguage(e.target.value);
+    console.log(e.target.value);
+  }
+
   const audioPlay = () => {
     audioRef.current.play()
     setCurrentIndex(0)
@@ -172,7 +184,7 @@ const talkStart = async () => {
   const sttStart = () => {
     setUserInput("")
     setRecord(true)
-    SpeechRecognition.startListening({ language: 'en-US' })
+    SpeechRecognition.startListening({ language: yourLanguage })
   }
 
   const sttStop = () => {
@@ -246,6 +258,15 @@ const talkStart = async () => {
       ) : (
         <div className={styles.image_container}>
         <h3>e-Friends</h3>
+        <div>
+        あなたが使用する言語
+        <select className={styles.select3} value={yourLanguage} label="character" onChange={selectYourLanguage}>
+        {yourLanguages.map((name) => {
+          return <option key={name} value={name}>{name}</option>;
+        })}
+        </select>
+        <br/>
+        </div>
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>start</button>
         </div>
         )}
