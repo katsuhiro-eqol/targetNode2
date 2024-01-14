@@ -9,7 +9,7 @@ import OpenAI from "openai";
 
 //index.js用generate.js
 const finetuned_model = {setto:"ft:gpt-3.5-turbo-0613:personal::7zayZD3r", 
-silva:"ft:gpt-3.5-turbo-0613:personal::7yhcFCbA"}
+silva:"ft:gpt-3.5-turbo-0613:personal::7yhcFCbA", bauncer:"ft:gpt-3.5-turbo-1106:personal::8Wg2MJF4"}
 
 //openai@4.7.0での記載方法
 const openai = new OpenAI({
@@ -31,10 +31,9 @@ export default async function (req, res) {
   }
   const userInput = req.body.input || '';
   const character = req.body.character;
-  const fewShot = req.body.fewShot;
-  const previousData = req.body.previousData;
+  const setting = req.body.setting;
+  const history = req.body.history;
   const sca = req.body.sca;
-  console.log(sca)
 
   if (userInput.length === 0) {
     res.status(400).json({
@@ -47,7 +46,7 @@ export default async function (req, res) {
 
   try {
     const completion = await openai.chat.completions.create({
-      messages: generateMessages(userInput, fewShot, previousData, 3),//直前3会話を参照する
+      messages: generateMessages(userInput, setting, history),//直前3会話を参照する
       model: finetuned_model[character],
       max_tokens: 80,
       stop: "\n",
@@ -55,7 +54,7 @@ export default async function (req, res) {
     });
     const resultString = completion.choices[0].message.content.trim()
     //句読点、？、！、・などをスペースに変換
-    audioString = processedString(resultString)
+    const audioString = processedString(resultString)
     console.log("audioString: ", audioString)
     //resultStringをsha512でハッシュ化
     const hashString = md5(audioString)
@@ -71,10 +70,10 @@ export default async function (req, res) {
       const repeat = docSnap.data().repeat + 1
       if (keys.includes("duration")){
         const duration = data.duration
-        const imageList = durationResolve(duration)
-        res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: duration, slides: imageList});
+        //const imageList = durationResolve(duration)
+        res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: duration});
       }else{
-        res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: "no duration data", slides: []});
+        res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: "no duration data"});
       }  
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
@@ -86,18 +85,17 @@ export default async function (req, res) {
         console.log(response.data.wav)
         const currentWavPath = bucket_path + response.data.wav;//urlを返すようにaws flask側を変更
         const currentRef = ref(storage, currentWavPath)
-        const imageList = durationResolve(response.data.duration)
         getDownloadURL(currentRef)
         .then((url) => {
           console.log("wavUrl", url)
           //existingがfalseなのでindexでの保存処理あり
-          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, duration:response.data.duration, slides: imageList});
+          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, duration:response.data.duration});
         })
         .catch((error) => {
-          res.status(200).json({ prompt: userInput, result: resultString, wav: error, duration: "", slides:[]});
+          res.status(200).json({ prompt: userInput, result: resultString, wav: error, duration: ""});
         })
       } catch (error) {
-        res.status(400).json({ prompt: userInput, result: "espnet serverが起動していません", wav: error, duration: "", slides: []});
+        res.status(400).json({ prompt: userInput, result: "espnet serverが起動していません", wav: error, duration: ""});
       }
     }
   } catch(error) {
@@ -116,96 +114,15 @@ export default async function (req, res) {
   }
 }
 
-const generateMessages = (input, fewShot, previousData, n) => {
-  //直前n会話をpromptに使用する
-  let messages = []
-  const m = previousData.length
-  if (m > n) {
-    messages.push({"role": "system", "content": fewShot})
-    previousData.slice(n,m-n)
-    previousData.map((item) => {
-      messages.push({"role": "user", "content": item.input})
-      messages.push({"role": "assistant", "content": item.output})
-    })
-    messages.push({"role": "user", "content": input})
-  } else {
-    messages.push({"role": "system", "content": fewShot})
-    previousData.map((item) => {
-      messages.push({"role": "user", "content": item.input})
-      messages.push({"role": "assistant", "content": item.output})
-    })
-    messages.push({"role": "user", "content": input})    
-  }
-/*
-  if (pre.output != "") {
-    messages = [
-      //preのfewShotは使わない。systemひとつに対してuserとassistantの会話が続く
-      {"role": "system", "content": fewShot},
-      {"role": "user", "content": pre.input},
-      {"role": "assistant", "content": pre.output},
-      {"role": "user", "content": input}     
-    ]
-  } else {
-    messages = [
-      {"role": "system", "content": fewShot},
-      {"role": "user", "content": input}   
-    ]   
-  }
-  */
-  console.log(messages)
+const generateMessages = (input, setting, history)  => {
+  let messages = [{"role": "system", "content": setting}]
+  messages = messages.concat(history)
+  messages = messages.concat([{"role": "user", "content": input}])
   return messages
 }
 
-const durationResolve = (text) => {
-  const durationList = text.split("&")
-  let imageList = new Array(24).fill("Sil_00.jpg")
-  durationList.forEach((item) => {
-      const itemList = item.split("-")
-      const child = itemList[1]
-      const mother = itemList[2]
-      const count = parseInt(itemList[3])
-
-      switch(mother){
-          case "9":
-              const arr1 = new Array(count).fill("Sil_01-A.jpg")
-              imageList = imageList.concat(arr1)
-              break
-          case "12":
-              const arr2 = new Array(count).fill("Sil_02-I.jpg")
-              imageList = imageList.concat(arr2)
-              break
-          case "14":
-              const arr3 = new Array(count).fill("Sil_03-U-O.jpg")
-              imageList = imageList.concat(arr3)                   
-              break
-          case "15":
-              const arr4 = new Array(count).fill("Sil_04-E.jpg")
-              imageList = imageList.concat(arr4)
-              break
-          case "10":
-              const arr5 = new Array(count).fill("Sil_03-U-O.jpg")
-              imageList = imageList.concat(arr5)
-              break
-          case "23":
-          case "25":
-          case "35":
-              const arr_n = new Array(count).fill("Sil_00.jpg")
-              imageList = imageList.concat(arr_n)
-              break
-          default:
-              const arr_n2 = new Array(1).fill("Sil_00.jpg")
-              imageList = imageList.concat(arr_n2)
-              break
-      }
-  })
-  const lastImage = imageList.slice(-1)[0]
-  const arr_6 = new Array(12).fill(lastImage)
-  imageList = imageList.concat(arr_6)
-  return imageList
-}
-
 const processedString = (text) => {
-  let newText
+  let newText = text
   const targetCharacter = ["。", "、", "？", "?", "！","!", "・", "＜", "<", "＞", ">"]
   targetCharacter.map((item) => {
     newText = newText.replace(item, " ")
@@ -213,3 +130,4 @@ const processedString = (text) => {
   newText = newText.trim()
   return newText
 }
+

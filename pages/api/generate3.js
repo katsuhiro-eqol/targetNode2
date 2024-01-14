@@ -11,10 +11,9 @@ const openai = new OpenAI({
 export default async function (req, res) {
   const userInput = req.body.input || '';
   const character = req.body.character;
-  const fewShot = req.body.fewShot;
-  console.log(character)
-  console.log(generateMessages(userInput, fewShot))
-  console.log(finetuned_model[character])
+  const setting = req.body.setting;
+  const history = req.body.history;
+
   if (userInput.length === 0) {
     res.status(400).json({
       error: {
@@ -26,7 +25,7 @@ export default async function (req, res) {
 
   try {
     const completion = await openai.chat.completions.create({
-      messages: generateMessages(userInput, fewShot),
+      messages: generateMessages(userInput, setting, history),
       model: finetuned_model[character],
       //model: "gpt-3.5-turbo",
       max_tokens: 80,
@@ -51,17 +50,9 @@ export default async function (req, res) {
 }
 }
 
-function generateMessages(input, fewShot) {
-  const messages = [
-    /*
-    {"role": "system", "content": "設定に基づいて必ず50字以内で回答すること。設定:陀宰は男性,17歳,高校2年生,両親と姉と兄がいる,右目の視力がない,面倒なことに巻き込まれやすいタイプ,正式名はダザイメイ,そっけないけど、一途なところがある,特技はツッコミと危機察知,好きな食べ物は炭酸飲料とグラタン,好きな動物は猫。"},
-    {"role": "user", "content": "陀宰のことを教えて"},
-    {"role": "assistant", "content":"陀宰は17歳の高校生、猫好きです。"},
-    {"role": "user", "content": "陀宰の特技を教えて"},
-    {"role": "assistant", "content":"その情報にはアクセスできません。"},
-    */
-    {"role": "system", "content": fewShot},
-    {"role": "user", "content": input}
-  ]
+const generateMessages = (input, setting, history)  => {
+  let messages = [{"role": "system", "content": setting}]
+  messages = messages.concat(history)
+  messages = messages.concat([{"role": "user", "content": input}])
   return messages
 }

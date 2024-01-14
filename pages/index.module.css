@@ -79,6 +79,10 @@
   margin-right: auto;
 }
 .main input[type="text"] {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 320px;
+  width: 90%;
   padding: 12px 16px;
   border: 1px solid #10a37f;
   border-radius: 4px;
@@ -86,8 +90,8 @@
   outline-color: #10a37f;
 }
 .main textarea {
-  max-width: 400px;
-  width: 90%;
+  max-width: 300px;
+  width: 80%;
   padding: 12px 16px;
   border: 2px solid #160576;
   border-radius: 4px;
@@ -117,7 +121,7 @@
   font-weight: bold;
   margin-top: 20px;
   margin-bottom: 10px;
-  width: 350px;
+  max-width: 80%;
   text-align: center;
 }
 .main .evaluation {

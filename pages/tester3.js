@@ -19,63 +19,71 @@ export default function Tester3() {
   const [info, setInfo] = useState({}) //固有名詞情報
   const [greetings, setGreetings] = useState([]) //定型QAリスト
   const [gInfo, setGInfo] = useState({}) //定型QA情報
-  const characters = ["silva", "setto"];
-  const characterName = {silva: "シルヴァ", setto: "セット"}
+  const characterName = "バウンサー"
   const testers = ["tester1@target", "tester2@target", "tester3@target"]
   const selfwords = ["貴方", "あなた", "君"]
 
   const timestamp = Timestamp.now();
   const today = timestamp.toDate()
 
+  const conversion = {獲端:"獲端",エバナ:"獲端",茅ヶ崎:"茅ヶ崎",茅ケ崎:"茅ヶ崎",チガサキ:"茅ヶ崎",凝部:"凝部",ギョウブ:"凝部",射落:"射落",イオチ:"射落",双巳:"双巳",フタミ:"双巳",陀宰:"陀宰",ダザイ:"陀宰",廃寺:"廃寺",ハイジ:"廃寺",明瀬:"明瀬",アカセ:"明瀬",萬城:"萬城",バンジョウ:"萬城",瀬名:"瀬名",セナ:"瀬名",バウンサー:"バウンサー",監視者:"バウンサー",ディレクター:"ディレクター",プロデューサー:"プロデューサー"}
+
   async function onSubmit(event) {
     event.preventDefault();
     const now = new Date()
     const time = now.getTime()
-
+    let refer = []
+    if (history.length < 6){
+        refer = history
+    } else {
+        refer = history.slice(-6)
+    }
+    setHistory(refer)
     //定型QAかどうかの判定のための準備
-    let preparedGreeting = {}
+    let preparedGreeting = ""
     greetings.map((item) => {
       if (userInput.search(item) !==-1){
         const selected = gInfo[item]
         preparedGreeting = selected[Math.floor(Math.random() * selected.length)]
-        console.log(preparedGreeting)
       }
     })
-    
-    if (Object.keys(preparedGreeting).length !== 0){
-        //応答が早すぎる
-        setResult(preparedGreeting["output"])
+    if (preparedGreeting !== ""){
+        setResult(preparedGreeting)
         setPrompt(userInput)
-        setUserInput("")
-      } else {
-        
-        let setting = ""
+      //ここまで定型応答。以下はopenAIに投げる。
+    } else {
+        let setting = "設定に基づいて50字以内で回答すること。"
         let fewShot = ""
-        items.map((item) => {
+        //登録した固有名詞と一致する語があるか検索
+        const convKeys = Object.keys(conversion)
+        convKeys.map((item) => {
             if (userInput.search(item) !==-1){
-                const t = item + "は" + info[item].join() + "。"
-                setting += t
+                const cItem = conversion[item]
+                const t = "設定にないことは回答しない。設定:" + item + "は" + info[cItem].join() + "。"
+                fewShot += t
             }
         })
+        /*
         selfwords.map((word) => {
             if (userInput.search(word) !==-1){
-                const t = "あなたは" + info["バウンサー"].join() + "。"
-                setting += t
+                const t = "あなたは" + info[characterName].join() + "。"
+                fewShot += t
             }
         })
-        if (setting.length == 0){
-            setting = "知らないことには回答しないで良い"
+        */
+        if (fewShot.length == 0){
+            fewShot = "あなたは" + info[characterName].join() + "。知らないことは回答しないでもよい"
         }
-        const option2 =  "設定に基づいて50字以内で回答すること。設定:"
-        fewShot = option2 + setting
-        console.log(fewShot)
+        setting += fewShot
+        console.log(setting)
+
         try {
           const response = await fetch("/api/generate3", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot }),
+            body: JSON.stringify({ input: userInput, character: character, setting: setting, history:refer }),
           });
 
           const data = await response.json();
@@ -85,10 +93,9 @@ export default function Tester3() {
     
           setPrompt(data.prompt)
           setResult(data.result);
-          const updates = history
-          updates.push(userInput + "\n" + data.result + "\n")
-          setHistory(updates);
-          console.log(history);
+          const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
+          console.log("updates:", updates)
+          setHistory(updates)
           setUserInput("");
           setComment("good, bad or incorrect?");
           setCanRegistration(false)

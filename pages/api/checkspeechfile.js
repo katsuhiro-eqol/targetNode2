@@ -2,9 +2,12 @@ import { db } from "../../lib/FirebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import md5 from 'md5';
 
+const ecs_url = "http://13.113.209.222:80" //ecs@aws ElasticIP
+
 export default async function (req, res) {
   const userInput = req.body.input || '';
   const character = req.body.character;
+  const sca = req.body.sca;
 
   if (userInput.length === 0) {
     res.status(400).json({
@@ -15,8 +18,12 @@ export default async function (req, res) {
     return;
   }
 
+//句読点等の除去による音声ファイル共通化
+const pString = processedString(userInput)
+console.log(pString, character, sca)
+
 //音声ファイルが存在するかどうか確認
-const hashString = md5(userInput)
+const hashString = md5(pString)
 const id = character + "-" + hashString
 const docRef = doc(db, "Speech", id);
 const docSnap = await getDoc(docRef);
@@ -27,12 +34,12 @@ if (docSnap.exists()) {
     if (keys.includes("duration")){
         const duration = data.duration
         const imageList = durationResolve(duration)
-        res.status(200).json({ comment: "", wav: url, slides: imageList });
+        res.status(200).json({ result: pString, comment: "既にデータがあります", wav: url, slides: imageList, id:id });
     }else{
-        res.status(200).json({ comment: "アニメーションデータがありません", wav: url, slides: [] });
+        res.status(200).json({ result: pString, comment: "アニメーションデータがありません", wav: url, slides: [], id: id });
     }
 } else {
-    res.status(200).json({ comment: "ファイルが存在しません", wav: "", slides: [] });
+    res.status(200).json({ result: pString, comment:"wavUrl取得に失敗しました", wav: "", duration:"", slides: [], id: id});
     }
 }
 
@@ -85,3 +92,13 @@ const durationResolve = (text) => {
     imageList = imageList.concat(arr_n3)
     return imageList
 }
+
+const processedString = (text) => {
+    let newText = text
+    const targetCharacter = ["。", "、", "？", "?", "！","!", "・", "＜", "<", "＞", ">"]
+    targetCharacter.map((item) => {
+      newText = newText.replace(item, " ")
+    })
+    newText = newText.trim()
+    return newText
+  }

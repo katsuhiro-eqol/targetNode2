@@ -11,22 +11,20 @@ import MicIcon from '@mui/icons-material/Mic';
 import SendIcon from '@mui/icons-material/Send';
 import StopIcon from '@mui/icons-material/Stop';
 import { db } from "../lib/FirebaseConfig";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
+import { collection, query, where, doc, getDoc, getDocs, setDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import styles from "./index.module.css";
 
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
 const timestamp = Timestamp.now();
 const today = timestamp.toDate();
 
-export default function STTS2() {
-  const initialSlides = new Array(1).fill("Sil_00.jpg")
-  const [character, setCharacter] = useState("silva")
-  const [userInput, setUserInput] = useState("");
-  const [prompt, setPrompt] = useState("");
-  const [result, setResult] = useState("");
-
-  const [pfewShot, setPFewShot] = useState(""); //ひとつ前のfewShot
-  const [previousData, setPreviousData] = useState([])//変更部分。5会話前までを配列で記録する
+export default function Bauncer() {
+  const initialSlides = new Array(1).fill("Kanshi-00.jpg")
+  const [character, setCharacter] = useState("bauncer")
+  const [userInput, setUserInput] = useState("")
+  const [prompt, setPrompt] = useState("")
+  const [result, setResult] = useState("")
+  const [history, setHistory] = useState([])
   const [items, setItems] = useState([]) //固有名詞リスト
   const [info, setInfo] = useState({}) //固有名詞情報
   const [greetings, setGreetings] = useState([]) //定型QAリスト
@@ -41,9 +39,9 @@ export default function STTS2() {
   const [canSend, setCanSend] = useState(false)
   const audioRef = useRef(null)
   const intervalRef = useRef(null)
-  const characters = ["silva", "setto"];
-  const characterName = {silva: "シルヴァ", setto: "セット"}
-  const scaList = {silva: "1.0", setto: "1.2"}
+  const characters = ["bauncer"]
+  const characterName = "バウンサー"
+  const scaList = {silva: "1.0", setto: "1.2", bauncer: "1.0"}
   const selfwords = ["貴方", "あなた", "君"]
   const user = "tester" //登録情報より取得
   const {
@@ -53,6 +51,7 @@ export default function STTS2() {
     browserSupportsSpeechRecognition
   } = useSpeechRecognition();
 
+  const conversion = {獲端:"獲端",エバナ:"獲端",茅ヶ崎:"茅ヶ崎",茅ケ崎:"茅ヶ崎",チガサキ:"茅ヶ崎",凝部:"凝部",ギョウブ:"凝部",射落:"射落",イオチ:"射落",双巳:"双巳",フタミ:"双巳",陀宰:"陀宰",ダザイ:"陀宰",廃寺:"廃寺",ハイジ:"廃寺",明瀬:"明瀬",アカセ:"明瀬",萬城:"萬城",バンジョウ:"萬城",瀬名:"瀬名",セナ:"瀬名",バウンサー:"バウンサー",監視者:"バウンサー",ディレクター:"ディレクター",プロデューサー:"プロデューサー"}
   async function onSubmit(event) {
     event.preventDefault();
     setWavUrl("")
@@ -62,8 +61,14 @@ export default function STTS2() {
     setPrompt(userInput)
     setResult("応答を待ってます・・・")
 
+    let refer = []
+    if (history.length < 6){
+        refer = history
+    } else {
+        refer = history.slice(-6)
+    }
     //定型QAかどうかの判定のための準備
-    let preparedGreeting = {}
+    let preparedGreeting = ""
     greetings.map((item) => {
       if (userInput.search(item) !==-1){
         const selected = gInfo[item]
@@ -71,70 +76,27 @@ export default function STTS2() {
       }
     })
 
-    if (Object.keys(preparedGreeting).length !== 0){
-      const imageList = durationResolve(preparedGreeting["duration"])
-      let newS = []
-      imageList.filter((value, index) => {
-          if (index%6 === 0){
-              newS.push(value)
-          }
-      })      
-      setTimeout(() => {
-        setWavUrl(preparedGreeting["url"])
-        setSlides(newS)
-        setResult("・・・")
-      }, 700);
-      setTimeout(() => {
-        setResult(preparedGreeting["output"])
-      }, 3700);
-      /*
-      定型挨拶はConversationsに登録しない。
-      const convRef = doc(db, "Conversations", user)
-      const cdata = {
-        character: character,
-        input: userInput,
-        output: preparedGreeting["output"],
-        date: today
-      }
-      updateDoc(convRef, {conversation: arrayUnion(cdata)})   
-      */
-      //setUserInput("")    
+    if (preparedGreeting !== ""){
+        loadGreetingData(preparedGreeting, 0.5)//intervalを0.5sとしてスライド生成
       //ここまで定型応答。以下はopenAIに投げる。
     } else {
-      let setting = ""
-      let fewShot = ""
-      //固有情報をプロンプトに加えるための処理
-      items.map((item) => {
-          if (userInput.search(item) !==-1){
-              const t = item + "は" + info[item].join() + "。"
-              setting += t
-          }
-      })
-      selfwords.map((word) => {
-          if (userInput.search(word) !==-1){
-              const name = characterName[character]
-              const t = "あなたは" + info[name].join() + "。"
-              setting += t
-          }
-      })
-      if (setting !== ""){
-        //settingない場合はfewShotを入れない（文字数を減らす）
-        fewShot = "以下の設定に矛盾しないよう100文字以内で回答すること。設定：" + setting
-      } else {
-        fewShot = "100文字以内で回答すること。"
-      }
-      //前回の入出力をpreviousDataに追加する
-      const pre = {input: prompt, output: result, fewShot: pfewShot}
-      if (previousData.length === 5){
-        const updatePreData = previousData.unshift(pre)
-        updatePreData.pop()
-        setPreviousData(updatePreData)
-      } else {
-        const updatePreData = previousData.unshift(pre)
-        setPreviousData(updatePreData)
-      }
-      
-      
+        let setting = "設定に基づいて50字以内で回答すること。設定:"
+        let fewShot = ""
+        //登録した固有名詞と一致する語があるか検索
+        const convKeys = Object.keys(conversion)
+        convKeys.map((item) => {
+            if (userInput.search(item) !==-1){
+                const cItem = conversion[item]
+                const t = "設定にないことは回答しない。設定:" + item + "は" + info[cItem].join() + "。"
+                fewShot += t
+            }
+        })
+
+        if (fewShot.length == 0){
+            fewShot = "あなたは" + info[characterName].join() + "。知らないことは回答しないでもよい"
+        }
+        setting += fewShot
+        console.log(setting)
       //post
       try {
         const response = await fetch("/api/generate2", {
@@ -142,7 +104,8 @@ export default function STTS2() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, previousData: previousData, sca: scaList[character] }),
+          //body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, previousData: previousData, sca: scaList[character] }),
+          body: JSON.stringify({ input: userInput, setting: setting, history: refer, character: character, sca: scaList[character]}),
         });
   
         const data = await response.json();
@@ -155,46 +118,9 @@ export default function STTS2() {
         setTimeout(() => {
           setResult(data.result) 
         }, 3000);
-        setPFewShot(fewShot)
-        let newS = []
-        data.slides.filter((value, index) => {
-            if (index%6 === 0){
-                newS.push(value)
-            }
-        })
-        if (newS.length >0){
-            setSlides(newS)
-        }
-        //embedding
-        try {
-            const text = "user:" + prompt + ",assistant:" + result
-            const response = await fetch("/api/embedding", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({conversation:text}),
-            });
-            const data2 = await response.json();
-            const embedding = data2.embedding
-            const convRef = doc(db, "Conversations", user)
-            const cdata = {
-              input: data.prompt,
-              output: data.result,
-              date: today,
-              embedding: embedding
-            }
-            updateDoc(convRef, {[character]: arrayUnion(cdata)})     
-        } catch (error) {
-            const convRef = doc(db, "Conversations", user)
-            const cdata = {
-              input: data.prompt,
-              output: data.result,
-              date: today,
-            }
-            updateDoc(convRef, {[character]: arrayUnion(cdata)})   
-        }
-        //ここまで
+
+        const imageList = createBauncerSlides(data.duration, 0.5)
+        setSlides(imageList)
 
         if (data.repeat == 1){
           const id = character + "-" + data.hash
@@ -220,7 +146,9 @@ export default function STTS2() {
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata, {merge:true}) 
         }
-        //setUserInput("");
+        const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
+        console.log("updates:", updates)
+        setHistory(updates)
       } catch(error) {
         console.error(error);
         alert(error.message);
@@ -228,63 +156,8 @@ export default function STTS2() {
     }
   }
 
-  const durationResolve = (text) => {
-    const durationList = text.split("&")
-    let imageList = new Array(24).fill("Sil_00.jpg")
-    durationList.forEach((item) => {
-        const itemList = item.split("-")
-        const child = itemList[1]
-        const mother = itemList[2]
-        const count = parseInt(itemList[3])
-
-        switch(mother){
-            case "9":
-                const arr1 = new Array(count).fill("Sil_01-A.jpg")
-                imageList = imageList.concat(arr1)
-                break
-            case "12":
-                const arr2 = new Array(count).fill("Sil_02-I.jpg")
-                imageList = imageList.concat(arr2)
-                break
-            case "14":
-                const arr3 = new Array(count).fill("Sil_03-U-O.jpg")
-                imageList = imageList.concat(arr3)                   
-                break
-            case "15":
-                const arr4 = new Array(count).fill("Sil_04-E.jpg")
-                imageList = imageList.concat(arr4)
-                break
-            case "10":
-                const arr5 = new Array(count).fill("Sil_03-U-O.jpg")
-                imageList = imageList.concat(arr5)
-                break
-            case "23":
-            case "25":
-            case "35":
-                const arr_n = new Array(count).fill("Sil_00.jpg")
-                imageList = imageList.concat(arr_n)
-                break
-            default:
-                const arr_n2 = new Array(1).fill("Sil_00.jpg")
-                imageList = imageList.concat(arr_n2)
-                break
-        }
-    })
-    const lastImage = imageList.slice(-1)[0]
-    const arr_6 = new Array(12).fill(lastImage)
-    //const arr_n3 = new Array(48).fill("Sil_00.jpg")
-    imageList = imageList.concat(arr_6)
-    //imageList = imageList.concat(arr_n3)
-    return imageList
-}
-
-  const selectCharacter = (e) => {
-    setCharacter(e.target.value);
-    console.log(e.target.value);
-  }
-
   const originalInfo = async() => {
-    const docRef = doc(db, "OriginalInformation", "hamefura");
+    const docRef = doc(db, "OriginalInformation", "アイデアファクトリー");
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         const data = docSnap.data()
@@ -306,6 +179,7 @@ export default function STTS2() {
         const data = docSnap.data()
         console.log("Document data:", data);
         const g = Object.keys(data)
+        console.log(g)
         setGreetings(g)
         setGInfo(data)
     } else {
@@ -314,35 +188,61 @@ export default function STTS2() {
     }
   }
 
-const talkStart = async () => {
-  //暫定的にESPnetが立ち上がってなくても使えるようにする
-  setWavReady(true)
-  sttStart()
-  setTimeout(() => {
-    sttStop()
-    resetTranscript()
-  }, 1000);
-  /*
-  try {
-    const response = await fetch("/api/dockerInit", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ character: character }),
+  const loadGreetingData = async(text, interval) => {
+    const speechRef = collection(db, "Speech");
+    const q = query(speechRef, where("output", "==", text));
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+        const data = doc.data()
+        const imageList = createBauncerSlides(data.duration, interval)
+        setTimeout(() => {
+          setWavUrl(data.url)
+          setSlides(imageList)
+          setResult("・・・")
+        }, 400);
+        setTimeout(() => {
+          setResult(text)
+        }, 3400);
     });
-    const data = await response.json();
-    if (data.wav.length !== 0) {
-      setWavReady(true)
-      setResult("")
-    } else {
-      setResult(data.result)
-    }
-  } catch(error) {
-    console.log(error)
   }
-  */
-}
+
+//bauncerのスライドを生成。1countは512frame 512/44100 = 0.0116秒
+//トーク中一定間隔で点滅するスライド。点滅感覚をtimeとしてアニメーションインターバルもtimeに合わせる
+  const createBauncerSlides = (duration, time) => {
+    const durationList = duration.split("&")
+    let totalSlides = 0
+    durationList.forEach((item) => {
+        const itemList = item.split("-")
+        const count = parseInt(itemList[3])
+        totalSlides += count
+    })
+    //timeに相当するcount数は
+    console.log(totalSlides)
+    const intervalCount = Math.floor(time * 44100/512)
+    const n = Math.floor(totalSlides/intervalCount) + 4
+    console.log(n)
+    let imageList = []
+    for (let i = 0; i<n; i++){
+        if (i%2==0){
+            imageList.push("Kanshi-01.jpg")
+        } else {
+            imageList.push("Kanshi-00.jpg")
+        }
+    }
+    return imageList
+  }
+
+
+
+    const talkStart = async () => {
+    //暫定的にESPnetが立ち上がってなくても使えるようにする
+    setWavReady(true)
+    sttStart()
+    setTimeout(() => {
+        sttStop()
+        resetTranscript()
+    }, 1000);
+    }
 
   const audioPlay = () => {
     audioRef.current.play()
@@ -384,9 +284,10 @@ const talkStart = async () => {
       if (intervalRef.current !== null) {//タイマーが進んでいる時はstart押せないように//2
         return;
       }
+      //intervalはcreateBauncerSlides()に合わせる
       intervalRef.current = setInterval(() => {
           setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
-      }, 70)
+      }, 500)
       audioRef.current.play().then(() => {
         setCurrentIndex(0)
       })
@@ -414,6 +315,10 @@ const talkStart = async () => {
     }
   }, [userInput])
 
+  useEffect(() => {
+    console.log(history)
+  }, [history])
+
   return (
     <div>
       <Head>
@@ -425,7 +330,7 @@ const talkStart = async () => {
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
       <div className={styles.output}>{result}</div>
-      <div>{currentIndex}</div>
+      <div className={styles.none}>{currentIndex}</div>
       </div>
       ) : (
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
