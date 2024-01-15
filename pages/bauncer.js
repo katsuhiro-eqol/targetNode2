@@ -239,8 +239,6 @@ export default function Bauncer() {
     return imageList
   }
 
-
-
     const talkStart = async () => {
     //暫定的にESPnetが立ち上がってなくても使えるようにする
     setWavReady(true)
@@ -329,7 +327,7 @@ export default function Bauncer() {
   return (
     <div>
       <Head>
-        <title>はめフラトーク</title>
+        <title>target</title>
         Feature-Policy: autoplay 'self' https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/
       </Head>
       <main className={styles.main}>
