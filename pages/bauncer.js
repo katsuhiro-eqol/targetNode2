@@ -52,6 +52,7 @@ export default function Bauncer() {
   } = useSpeechRecognition();
 
   const conversion = {獲端:"獲端",エバナ:"獲端",茅ヶ崎:"茅ヶ崎",茅ケ崎:"茅ヶ崎",チガサキ:"茅ヶ崎",凝部:"凝部",ギョウブ:"凝部",射落:"射落",イオチ:"射落",双巳:"双巳",フタミ:"双巳",陀宰:"陀宰",ダザイ:"陀宰",廃寺:"廃寺",ハイジ:"廃寺",明瀬:"明瀬",アカセ:"明瀬",萬城:"萬城",バンジョウ:"萬城",瀬名:"瀬名",セナ:"瀬名",バウンサー:"バウンサー",監視者:"バウンサー",ディレクター:"ディレクター",プロデューサー:"プロデューサー"}
+  const resetString = ["その情報には、ロックが掛かっています。","ありません。","お答え出来ません。","感情の機能は、備わっていません。","ご質問内容が、エラーです。","その機能は備わっていません。","食事の機能は備わっていません。","必要ありません。"]
   async function onSubmit(event) {
     event.preventDefault();
     setWavUrl("")
@@ -127,7 +128,7 @@ export default function Bauncer() {
           const filename = data.hash + ".wav"
           const sdata = {
             filename: filename,
-            output: data.result,
+            output: data.audioString,
             url: data.wav,
             duration: data.duration,
             updated_at: today,
@@ -146,9 +147,15 @@ export default function Bauncer() {
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata, {merge:true}) 
         }
-        const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
-        console.log("updates:", updates)
-        setHistory(updates)
+        //resultがresetStringだったらhistoryを初期化する
+        if (resetString.includes(data.result)){
+            setHistory([])
+        } else {
+            const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
+            console.log("updates:", updates)
+            setHistory(updates)
+        }
+
       } catch(error) {
         console.error(error);
         alert(error.message);

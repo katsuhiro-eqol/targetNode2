@@ -27,7 +27,7 @@ export default function Tester3() {
   const today = timestamp.toDate()
 
   const conversion = {獲端:"獲端",エバナ:"獲端",茅ヶ崎:"茅ヶ崎",茅ケ崎:"茅ヶ崎",チガサキ:"茅ヶ崎",凝部:"凝部",ギョウブ:"凝部",射落:"射落",イオチ:"射落",双巳:"双巳",フタミ:"双巳",陀宰:"陀宰",ダザイ:"陀宰",廃寺:"廃寺",ハイジ:"廃寺",明瀬:"明瀬",アカセ:"明瀬",萬城:"萬城",バンジョウ:"萬城",瀬名:"瀬名",セナ:"瀬名",バウンサー:"バウンサー",監視者:"バウンサー",ディレクター:"ディレクター",プロデューサー:"プロデューサー"}
-
+  const resetString = ["その情報には、ロックが掛かっています。","ありません。","お答え出来ません。","感情の機能は、備わっていません。","ご質問内容が、エラーです。","その機能は備わっていません。","食事の機能は備わっていません。","必要ありません。"]
   async function onSubmit(event) {
     event.preventDefault();
     const now = new Date()
@@ -38,7 +38,6 @@ export default function Tester3() {
     } else {
         refer = history.slice(-6)
     }
-    setHistory(refer)
     //定型QAかどうかの判定のための準備
     let preparedGreeting = ""
     greetings.map((item) => {
@@ -93,9 +92,14 @@ export default function Tester3() {
     
           setPrompt(data.prompt)
           setResult(data.result);
-          const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
-          console.log("updates:", updates)
-          setHistory(updates)
+            //resultがresetStringだったらhistoryを初期化する
+            if (resetString.includes(data.result)){
+                setHistory([])
+            } else {
+                const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
+                console.log("updates:", updates)
+                setHistory(updates)
+            }
           setUserInput("");
           setComment("good, bad or incorrect?");
           setCanRegistration(false)

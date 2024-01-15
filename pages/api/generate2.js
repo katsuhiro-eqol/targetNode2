@@ -71,9 +71,9 @@ export default async function (req, res) {
       if (keys.includes("duration")){
         const duration = data.duration
         //const imageList = durationResolve(duration)
-        res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: duration});
+        res.status(200).json({ prompt: userInput, result: resultString, audioString: audioString, wav: url, hash: hashString, repeat: repeat, duration: duration});
       }else{
-        res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, duration: "no duration data"});
+        res.status(200).json({ prompt: userInput, result: resultString, audioString: audioString, wav: url, hash: hashString, repeat: repeat, duration: "no duration data"});
       }  
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
@@ -89,10 +89,10 @@ export default async function (req, res) {
         .then((url) => {
           console.log("wavUrl", url)
           //existingがfalseなのでindexでの保存処理あり
-          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, duration:response.data.duration});
+          res.status(200).json({ prompt: userInput, result: resultString, audioString: audioString, wav: url, hash: hashString, repeat: 1, duration:response.data.duration});
         })
         .catch((error) => {
-          res.status(200).json({ prompt: userInput, result: resultString, wav: error, duration: ""});
+          res.status(200).json({ prompt: userInput, result: resultString, audioString: audioString, wav: error, duration: ""});
         })
       } catch (error) {
         res.status(400).json({ prompt: userInput, result: "espnet serverが起動していません", wav: error, duration: ""});
