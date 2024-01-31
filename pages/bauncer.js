@@ -122,6 +122,16 @@ export default function Bauncer() {
 
         const imageList = createBauncerSlides(data.duration, 0.5)
         setSlides(imageList)
+        const cid = user + "-" + character
+        const convRef = doc(db, "Conversations", cid)
+        const cdata = {
+          character: character,
+          input: data.prompt,
+          output: data.result,
+          date: today
+        }
+        setDoc(convRef, {conversation: arrayUnion(cdata)}, {merge:true}) 
+        //updateDoc(convRef, {conversation: arrayUnion(cdata)}) 
 
         if (data.repeat == 1){
           const id = character + "-" + data.hash

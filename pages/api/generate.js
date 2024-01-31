@@ -14,8 +14,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const ec2_url = "http://54.70.243.84:5000" //espnet@aws
-const ecs_url = "http://13.113.209.222:80" //ecs@aws ElasticIP
+const ecs_url = "http://13.115.45.158:80" //espnetNLBのEIP ecs@aws ElasticIP
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 
 export default async function (req, res) {

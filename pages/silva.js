@@ -15,7 +15,7 @@ const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-3945
 const timestamp = Timestamp.now();
 const today = timestamp.toDate();
 
-export default function Index2() {
+export default function Silva() {
   const initialSlides = new Array(1).fill("Sil_00.jpg")
   const [character, setCharacter] = useState("silva");
   const [userInput, setUserInput] = useState("");
@@ -149,7 +149,8 @@ export default function Index2() {
         if (newS.length >0){
             setSlides(newS)
         }
-        const convRef = doc(db, "Conversations", user)
+        const cid = user + "-" + character
+        const convRef = doc(db, "Conversations", cid)
         const cdata = {
           character: character,
           input: data.prompt,

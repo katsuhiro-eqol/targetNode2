@@ -4,16 +4,18 @@ import styles from "./index.module.css";
 import { db } from "../lib/FirebaseConfig";
 import { doc, getDoc, updateDoc, arrayUnion,Timestamp } from "firebase/firestore";
 
-export default function Tester3() {
+export default function Tester4() {
   const [userInput, setUserInput] = useState("");
   const [result, setResult] = useState("");
   const [history, setHistory] = useState([]);
   const [prompt, setPrompt] = useState("");
+  const [setting, setSetting] = useState("")
   const [evaluation, setEvaluation] = useState("");
   const [comment, setComment] = useState("");
   const [ideal, setIdeal] = useState("");
   const [canRegistration, setCanRegistration] = useState(false);
   const [character, setCharacter] = useState("バウンサー");
+  const [model, setModel] = useState("バウンサー")
   const [tester, setTester] = useState("tester1@target")
   const [items, setItems] = useState([]) //固有名詞リスト
   const [info, setInfo] = useState({}) //固有名詞情報
@@ -21,6 +23,7 @@ export default function Tester3() {
   const [gInfo, setGInfo] = useState({}) //定型QA情報
   const characterName = "バウンサー"
   const testers = ["tester1@target", "tester2@target", "tester3@target"]
+  const models = ["base_model", "バウンサー"]
   const selfwords = ["貴方", "あなた", "君"]
 
   const timestamp = Timestamp.now();
@@ -58,7 +61,7 @@ export default function Tester3() {
         convKeys.map((item) => {
             if (userInput.search(item) !==-1){
                 const cItem = conversion[item]
-                const t = "設定にないことは回答しない。設定:" + item + "は" + info[cItem].join() + "。"
+                const t = "設定にないことは回答しない。設定:" + item + "は" + info[cItem].join()
                 fewShot += t
             }
         })
@@ -71,9 +74,10 @@ export default function Tester3() {
         })
         */
         if (fewShot.length == 0){
-            fewShot = "あなたは" + info[characterName].join() + "。知らないことは回答しないでもよい"
+            fewShot = "設定：あなたは" + info[characterName].join()
         }
         setting += fewShot
+        setSetting(setting)
         console.log(setting)
 
         try {
@@ -82,7 +86,7 @@ export default function Tester3() {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ input: userInput, character: character, setting: setting, history:refer }),
+            body: JSON.stringify({ input: userInput, character: character, setting: setting, history:refer, model: model }),
           });
 
           const data = await response.json();
@@ -97,7 +101,6 @@ export default function Tester3() {
                 setHistory([])
             } else {
                 const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
-                console.log("updates:", updates)
                 setHistory(updates)
             }
           setUserInput("");
@@ -147,8 +150,8 @@ export default function Tester3() {
       setIdeal("")
   }
 
-  const selectCharacter = (e) => {
-    setCharacter(e.target.value);
+  const selectModel = (e) => {
+    setModel(e.target.value);
     console.log(e.target.value);
   }
 
@@ -197,6 +200,10 @@ export default function Tester3() {
   useEffect(() => {
     greetingInfo()
   },[character])
+
+  useEffect(() => {
+    console.log(history)
+  }, [history])
   
   return (
     <div>
@@ -204,18 +211,30 @@ export default function Tester3() {
         <title>target</title>
       </Head>
       <main className={styles.main}>   
-        <h4>{character} / {tester}</h4>
+      <div>
+      <select className={styles.select1} value={model} label="model" onChange={selectModel}>
+        {models.map((name) => {
+          return <option key={name} value={name}>{name}</option>;
+        })}
+      </select>
+      <select className={styles.select2} value={tester} label="tester" onChange={selectTester}>
+        {testers.map((name) => {
+          return <option key={name} value={name}>{name}</option>;
+        })}
+      </select>
+      </div>
+      <br/>
         <form onSubmit={onSubmit}>
           <input
             type="text"
             name="input"
-            placeholder="伝える内容"
+            placeholder="質問内容"
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
           />
           <input type="submit" value="伝える" />
         </form>
-        <div className={styles.result}>{prompt}</div>
+        <div className={styles.result}>{setting}</div>
         <div className={styles.result}>{prompt}</div>
         <div className={styles.result}>{result}</div>
         <div className={styles.none}>{evaluation}</div>

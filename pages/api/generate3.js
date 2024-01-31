@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 //tester.js用
-const finetuned_model = {setto:"ft:gpt-3.5-turbo-0613:personal::7zayZD3r", silva:"ft:gpt-3.5-turbo-0613:personal::7yhcFCbA", バウンサー:"ft:gpt-3.5-turbo-1106:personal::8Wg2MJF4"}
+const finetuned_model = {setto:"ft:gpt-3.5-turbo-0613:personal::7zayZD3r", silva:"ft:gpt-3.5-turbo-0613:personal::7yhcFCbA", バウンサー:"ft:gpt-3.5-turbo-1106:personal::8Wg2MJF4", base_model:"gpt-3.5-turbo"}
 //20230904
 
 const openai = new OpenAI({
@@ -13,6 +13,7 @@ export default async function (req, res) {
   const character = req.body.character;
   const setting = req.body.setting;
   const history = req.body.history;
+  const m = req.body.model;
 
   if (userInput.length === 0) {
     res.status(400).json({
@@ -26,7 +27,7 @@ export default async function (req, res) {
   try {
     const completion = await openai.chat.completions.create({
       messages: generateMessages(userInput, setting, history),
-      model: finetuned_model[character],
+      model: finetuned_model[m],
       //model: "gpt-3.5-turbo",
       max_tokens: 80,
       stop: "\n",
