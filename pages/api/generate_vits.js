@@ -8,15 +8,14 @@ import md5 from 'md5';
 import OpenAI from "openai";
 
 //index.js用generate.js
-const finetuned_model = {setto:"ft:gpt-3.5-turbo-0613:personal::7zayZD3r", 
-silva:"ft:gpt-3.5-turbo-0613:personal::7yhcFCbA", bauncer:"ft:gpt-3.5-turbo-1106:personal::8Wg2MJF4"}
+const finetuned_model = {silva:"ft:gpt-3.5-turbo-0613:personal::7yhcFCbA", bauncer:"ft:gpt-3.5-turbo-1106:personal::8Wg2MJF4"}
 
 //openai@4.7.0での記載方法
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const ecs_url = "http://57.180.92.138:80" //espnetNLBのEIP ecs@aws ElasticIP
+const ecs_url = "http://52.68.52.228:80" //espnetNLBのEIP ecs@aws ElasticIP
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 
 export default async function (req, res) {
@@ -47,39 +46,33 @@ export default async function (req, res) {
     const completion = await openai.chat.completions.create({
       messages: generateMessages(userInput, setting, history),//直前3会話を参照する
       model: finetuned_model[character],
-      max_tokens: 80,
+      max_tokens: 120,
       stop: "\n",
       temperature: 0.4,
     });
     const resultString = completion.choices[0].message.content.trim()
-    //句読点、？、！、・などをスペースに変換
-    const audioString = processedString(resultString)
-    console.log("audioString: ", audioString)
     //resultStringをsha512でハッシュ化
-    const hashString = md5(audioString)
+    const hashString = md5(resultString)
     const id = character + "-" + hashString
 
     //音声ファイルが存在するかどうか確認
-    const docRef = doc(db, "Speech", id);
+    const docRef = doc(db, "SpeechVITS", id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data()
       const keys = Object.keys(data)
       const url = data.url
-      const repeat = docSnap.data().repeat + 1
-      if (keys.includes("duration")){
-        const duration = data.duration
-        //const imageList = durationResolve(duration)
-        res.status(200).json({ prompt: userInput, result: resultString, audioString: audioString, wav: url, hash: hashString, repeat: repeat, duration: duration});
-      }else{
-        res.status(200).json({ prompt: userInput, result: resultString, audioString: audioString, wav: url, hash: hashString, repeat: repeat, duration: "no duration data"});
-      }  
+      const repeat = data.repeat + 1
+      const pronunciation = data.pronunciation
+      res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: repeat, pronunciation: pronunciation});
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
       try {
         //ec2とecsの切り替えはここ
+
         console.log(ecs_url)
-        const query = ecs_url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character+ "&sca=" + sca
+        console.log(resultString)
+        const query = ecs_url + "/voice?text=" + resultString + "&hash=" + hashString + "&speaker_name=" + character
         const response = await axios.get(query);
         //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
         console.log(response.data.wav)
@@ -89,13 +82,13 @@ export default async function (req, res) {
         .then((url) => {
           console.log("wavUrl", url)
           //existingがfalseなのでindexでの保存処理あり
-          res.status(200).json({ prompt: userInput, result: resultString, audioString: audioString, wav: url, hash: hashString, repeat: 1, duration:response.data.duration});
+          res.status(200).json({ prompt: userInput, result: resultString, wav: url, hash: hashString, repeat: 1, pronunciation: response.data.pronunciation});
         })
         .catch((error) => {
-          res.status(200).json({ prompt: userInput, result: resultString, audioString: audioString, wav: error, duration: ""});
+          res.status(200).json({ prompt: userInput, result: resultString, wav: error, pronunciation: ""});
         })
       } catch (error) {
-        res.status(400).json({ prompt: userInput, result: "espnet serverが起動していません", wav: error, duration: ""});
+        res.status(400).json({ prompt: userInput, result: "vits2 serverが起動していません", wav: error, pronunciation: ""});
       }
     }
   } catch(error) {

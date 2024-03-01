@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const ecs_url = "http://13.113.209.222:80" //esc@aws ElasticIP
+const ecs_url = "http://57.180.92.138:80" //esc@aws ElasticIP
 const ec2_url = "http://54.70.243.84:5000" //espnet@aws
 
 export default async function (req, res) {

@@ -157,7 +157,8 @@ export default function Silva() {
           output: data.result,
           date: today
         }
-        updateDoc(convRef, {conversation: arrayUnion(cdata)}) 
+        setDoc(convRef, {conversation: arrayUnion(cdata)}, {merge:true}) 
+        
         if (data.repeat == 1){
           const id = character + "-" + data.hash
           const filename = data.hash + ".wav"
@@ -172,7 +173,7 @@ export default function Silva() {
           }
           console.log(id, sdata)
           const docRef = doc(db, "Speech", id);
-          setDoc(docRef, sdata) 
+          setDoc(docRef, sdata, {merge:true}) 
         } else {
           const id = character + "-" + data.hash
           const sdata = {
@@ -182,6 +183,7 @@ export default function Silva() {
           const docRef = doc(db, "Speech", id);
           setDoc(docRef, sdata, {merge:true}) 
         }
+        
         //setUserInput("");
       } catch(error) {
         console.error(error);
@@ -387,7 +389,6 @@ const talkStart = async () => {
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
       <div className={styles.output}>{result}</div>
-      <div>{currentIndex}</div>
       </div>
       ) : (
           <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>

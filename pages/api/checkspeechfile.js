@@ -2,7 +2,7 @@ import { db } from "../../lib/FirebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import md5 from 'md5';
 
-const ecs_url = "http://13.113.209.222:80" //ecs@aws ElasticIP
+const ecs_url = "http://57.180.92.138:80" //ecs@aws ElasticIP
 
 export default async function (req, res) {
   const userInput = req.body.input || '';

@@ -1,6 +1,3 @@
-//以前の会話をembeddingで参照できるようにする
-//直前の会話を参照するための関数を導入する func prompt(n)のような形
-
 import "regenerator-runtime";
 import React from "react";
 import Head from "next/head";
@@ -18,9 +15,11 @@ const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-3945
 const timestamp = Timestamp.now();
 const today = timestamp.toDate();
 
-export default function Bauncer() {
-  const initialSlides = new Array(1).fill("Kanshi-00.jpg")
-  const [character, setCharacter] = useState("bauncer")
+
+//20240228 定型挨拶およびアニメーションのないバージョン
+export default function VITS2() {
+  const initialSlides = new Array(1).fill("Sil_00.jpg")
+  const [character, setCharacter] = useState("silva")
   const [userInput, setUserInput] = useState("")
   const [prompt, setPrompt] = useState("")
   const [result, setResult] = useState("")
@@ -39,9 +38,8 @@ export default function Bauncer() {
   const [canSend, setCanSend] = useState(false)
   const audioRef = useRef(null)
   const intervalRef = useRef(null)
-  const characters = ["bauncer"]
-  const characterName = "バウンサー"
-  const scaList = {silva: "1.0", setto: "1.2", bauncer: "1.0"}
+  const characters = ["silva", "bauncer"]
+  const scaList = {silva: "1.0", bauncer: "1.0"}
   const selfwords = ["貴方", "あなた", "君"]
   const user = "tester" //登録情報より取得
   const {
@@ -51,8 +49,11 @@ export default function Bauncer() {
     browserSupportsSpeechRecognition
   } = useSpeechRecognition();
 
-  const conversion = {獲端:"獲端",エバナ:"獲端",茅ヶ崎:"茅ヶ崎",茅ケ崎:"茅ヶ崎",チガサキ:"茅ヶ崎",凝部:"凝部",ギョウブ:"凝部",射落:"射落",イオチ:"射落",双巳:"双巳",フタミ:"双巳",陀宰:"陀宰",ダザイ:"陀宰",廃寺:"廃寺",ハイジ:"廃寺",明瀬:"明瀬",アカセ:"明瀬",萬城:"萬城",バンジョウ:"萬城",瀬名:"瀬名",セナ:"瀬名",バウンサー:"バウンサー",監視者:"バウンサー",ディレクター:"ディレクター",プロデューサー:"プロデューサー"}
+  const characterName = {silva: "シルヴァ", bauncer: "バウンサー"}
+  const conversion = {獲端:"獲端",エバナ:"獲端",茅ヶ崎:"茅ヶ崎",茅ケ崎:"茅ヶ崎",チガサキ:"茅ヶ崎",凝部:"凝部",ギョウブ:"凝部",射落:"射落",イオチ:"射落",双巳:"双巳",フタミ:"双巳",陀宰:"陀宰",ダザイ:"陀宰",廃寺:"廃寺",ハイジ:"廃寺",明瀬:"明瀬",アカセ:"明瀬",萬城:"萬城",バンジョウ:"萬城",瀬名:"瀬名",セナ:"瀬名",バウンサー:"バウンサー",監視者:"バウンサー",ディレクター:"ディレクター",プロデューサー:"プロデューサー",
+シルヴァ:"シルヴァ", セット:"セット", はめフラ:"はめフラ", 乙女ゲーム:"はめフラ", アラン:"アラン", カタリナ:"カタリナ", キース:"キース", クイード王国:"クイード王国", ジオルド:"ジオルド", ソフィア:"ソフィア", ディルク:"ディルク", ニコル:"ニコル", フレデリク:"フレデリク", メアリ:"メアリ", ライル:"ライル", リリアナ:"リリアナ", ロジー:"ロジー", ロジオン:"ロジー", ヴィンクルム:"ヴィンクルム号", ヴィンクルム号:"ヴィンクルム号"}
   const resetString = ["その情報には、ロックが掛かっています。","ありません。","お答え出来ません。","感情の機能は、備わっていません。","ご質問内容が、エラーです。","その機能は備わっていません。","食事の機能は備わっていません。","必要ありません。"]
+
   async function onSubmit(event) {
     event.preventDefault();
     setWavUrl("")
@@ -68,112 +69,97 @@ export default function Bauncer() {
     } else {
         refer = history.slice(-6)
     }
-    //定型QAかどうかの判定のための準備
-    let preparedGreeting = ""
-    greetings.map((item) => {
-      if (userInput.search(item) !==-1){
-        const selected = gInfo[item]
-        preparedGreeting = selected[Math.floor(Math.random() * selected.length)]
-      }
+    //定型QAのプロセスは20240228では削除
+    let setting = "設定に基づいて回答すること。設定:"
+    let fewShot = ""
+    //登録した固有名詞と一致する語があるか検索
+    const convKeys = Object.keys(conversion)
+    convKeys.map((item) => {
+        if (userInput.search(item) !==-1){
+            const cItem = conversion[item]
+            const t = item + "は" + info[cItem].join() + "。"
+            fewShot += t
+        }
     })
 
-    if (preparedGreeting !== ""){
-        loadGreetingData(preparedGreeting, 0.5)//intervalを0.5sとしてスライド生成
-      //ここまで定型応答。以下はopenAIに投げる。
-    } else {
-        let setting = "設定に基づいて50字以内で回答すること。設定:"
-        let fewShot = ""
-        //登録した固有名詞と一致する語があるか検索
-        const convKeys = Object.keys(conversion)
-        convKeys.map((item) => {
-            if (userInput.search(item) !==-1){
-                const cItem = conversion[item]
-                const t = "設定にないことは回答しない。設定:" + item + "は" + info[cItem].join() + "。"
-                fewShot += t
-            }
-        })
+    if (fewShot.length == 0){
+        fewShot = "あなたは" + info[characterName[character]].join()
+    }
+    setting += fewShot
+    console.log(setting)
+  //post
+    try {
+      const response = await fetch("/api/generate_vits", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        //body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, previousData: previousData, sca: scaList[character] }),
+        body: JSON.stringify({ input: userInput, setting: setting, history: refer, character: character, sca: scaList[character]}),
+      });
 
-        if (fewShot.length == 0){
-            fewShot = "あなたは" + info[characterName].join() + "。知らないことは回答しないでもよい"
-        }
-        setting += fewShot
-        console.log(setting)
-      //post
-      try {
-        const response = await fetch("/api/generate2", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          //body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, previousData: previousData, sca: scaList[character] }),
-          body: JSON.stringify({ input: userInput, setting: setting, history: refer, character: character, sca: scaList[character]}),
-        });
-  
-        const data = await response.json();
-        if (response.status !== 200) {
-          throw data.error || new Error(`Request failed with status ${response.status}`);
-        }
-        setWavUrl(data.wav);
-        setResult("・・・")
-        setPrompt(data.prompt)
-        setTimeout(() => {
-          setResult(data.result) 
-        }, 3000);
-
-        const imageList = createBauncerSlides(data.duration, 0.5)
-        setSlides(imageList)
-        const cid = user + "-" + character
-        const convRef = doc(db, "Conversations", cid)
-        const cdata = {
-          character: character,
-          input: data.prompt,
-          output: data.result,
-          date: today
-        }
-        setDoc(convRef, {conversation: arrayUnion(cdata)}, {merge:true}) 
-
-        if (data.repeat == 1){
-          const id = character + "-" + data.hash
-          const filename = data.hash + ".wav"
-          const sdata = {
-            filename: filename,
-            output: data.audioString,
-            url: data.wav,
-            duration: data.duration,
-            updated_at: today,
-            repeat: 1,
-            status: "created by web system. non revised"
-          }
-          console.log(id, sdata)
-          const docRef = doc(db, "Speech", id);
-          setDoc(docRef, sdata) 
-        } else {
-          const id = character + "-" + data.hash
-          const sdata = {
-            repeat: data.repeat,
-            updated_at: today
-          }
-          const docRef = doc(db, "Speech", id);
-          setDoc(docRef, sdata, {merge:true}) 
-        }
-        //resultがresetStringだったらhistoryを初期化する
-        if (resetString.includes(data.result)){
-            setHistory([])
-        } else {
-            const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
-            console.log("updates:", updates)
-            setHistory(updates)
-        }
-
-      } catch(error) {
-        console.error(error);
-        alert(error.message);
+      const data = await response.json();
+      if (response.status !== 200) {
+        throw data.error || new Error(`Request failed with status ${response.status}`);
       }
+      setWavUrl(data.wav);
+      setResult("・・・")
+      setPrompt(data.prompt)
+      setTimeout(() => {
+        setResult(data.result) 
+      }, 3000);
+
+      //アニメーションとConversationData保存を省略する
+      /*
+      const imageList = createBauncerSlides(data.duration, 0.5)
+      setSlides(imageList)
+      const cid = user + "-" + character
+      const convRef = doc(db, "Conversations", cid)
+      const cdata = {
+        character: character,
+        input: data.prompt,
+        output: data.result,
+        date: today
+      }
+      setDoc(convRef, {conversation: arrayUnion(cdata)}, {merge:true}) 
+      */
+
+      const id = character + "-" + data.hash
+      const filename = data.hash + ".wav"
+      const sdata = {
+        filename: filename,
+        output: data.result,
+        url: data.wav,
+        pronunciation: data.pronunciation,
+        updated_at: today,
+        repeat: data.repeat,
+      }
+      const docRef = doc(db, "SpeechVITS", id);
+      setDoc(docRef, sdata) 
+      //resultがresetStringだったらhistoryを初期化する
+      if (resetString.includes(data.result)){
+          setHistory([])
+      } else {
+          const updates = refer.concat([{"role": "user", "content": data.prompt}, {"role": "assistant", "content": data.result}])
+          console.log("updates:", updates)
+          setHistory(updates)
+      }
+
+    } catch(error) {
+      console.error(error);
+      alert(error.message);
     }
   }
 
   const originalInfo = async() => {
-    const docRef = doc(db, "OriginalInformation", "アイデアファクトリー");
+    let charactersData = ""
+    if (character == "silva"){
+      charactersData = "hamefura"
+    } else {
+      charactersData = "アイデアファクトリー"
+    }
+
+    const docRef = doc(db, "OriginalInformation", charactersData);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         const data = docSnap.data()
@@ -187,6 +173,8 @@ export default function Bauncer() {
     }
   }
 
+  //20240228ヴァージョンでは定型QAは除去
+  /*
   const greetingInfo = async() => {
     const docRef = doc(db, "Greeting", character);
     const docSnap = await getDoc(docRef);
@@ -221,9 +209,17 @@ export default function Bauncer() {
         }, 3400);
     });
   }
+  */
+
+  const selectCharacter = (e) => {
+    setCharacter(e.target.value);
+    console.log(e.target.value);
+  }
 
 //bauncerのスライドを生成。1countは512frame 512/44100 = 0.0116秒
 //トーク中一定間隔で点滅するスライド。点滅感覚をtimeとしてアニメーションインターバルもtimeに合わせる
+//20240228バージョンはアニメーションを省略
+/*
   const createBauncerSlides = (duration, time) => {
     const durationList = duration.split("&")
     let totalSlides = 0
@@ -235,7 +231,7 @@ export default function Bauncer() {
     //timeに相当するcount数は
     console.log(totalSlides)
     const intervalCount = Math.floor(time * 44100/512)
-    const n = Math.floor(totalSlides/intervalCount) + 6
+    const n = Math.floor(totalSlides/intervalCount) + 4
     console.log(n)
     let imageList = []
     for (let i = 0; i<n; i++){
@@ -247,16 +243,17 @@ export default function Bauncer() {
     }
     return imageList
   }
+  */
 
-    const talkStart = async () => {
-    //暫定的にESPnetが立ち上がってなくても使えるようにする
-    setWavReady(true)
-    sttStart()
-    setTimeout(() => {
-        sttStop()
-        resetTranscript()
-    }, 1000);
-    }
+  const talkStart = async () => {
+  //暫定的にESPnetが立ち上がってなくても使えるようにする
+  setWavReady(true)
+  sttStart()
+  setTimeout(() => {
+      sttStop()
+      resetTranscript()
+  }, 1000);
+  }
 
   const audioPlay = () => {
     audioRef.current.play()
@@ -276,7 +273,7 @@ export default function Bauncer() {
 
   useEffect(() => {
     originalInfo()
-    greetingInfo()
+    //greetingInfo()
     return () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
@@ -285,13 +282,23 @@ export default function Bauncer() {
   },[])
 
   useEffect(() => {
-    greetingInfo()
+    //greetingInfo()
+    originalInfo()
+    if (character == "silva"){
+      const s = new Array(1).fill("Sil_00.jpg")
+      setSlides(s)
+    } else {
+      const s = new Array(1).fill("Kanshi-00.jpg")
+      setSlides(s)
+    }
   },[character])
 
+  //20240228ヴァージョンはアニメーション省略なのでwavUrlが更新されたらaudioPlayする
   useEffect(() => {
-    setCurrentIndex(0)
+    audioPlay()
   }, [wavUrl])
 
+  /*
   useEffect(() => {
     setCurrentIndex(0)
     if (slides.length !== initialSlides.length){
@@ -312,16 +319,17 @@ export default function Bauncer() {
   }, [slides])
 
   useEffect(() => {
-    setUserInput(transcript)
-  }, [transcript])
+  if (currentIndex === slides.length-2){
+      setSlides(initialSlides)
+      setCurrentIndex(0)
+      setWavUrl("")
+  }
+}, [currentIndex]);
+  */
 
   useEffect(() => {
-    if (currentIndex === slides.length-2){
-        setSlides(initialSlides)
-        setCurrentIndex(0)
-        setWavUrl("")
-    }
-  }, [currentIndex]);
+    setUserInput(transcript)
+  }, [transcript])
 
   useEffect(() => {
     if (userInput.length !== 0){
@@ -347,8 +355,16 @@ export default function Bauncer() {
       <div className={styles.none}>{currentIndex}</div>
       </div>
       ) : (
-          <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
+        <div>
+        <select className={styles.select1} value={character} label="character" onChange={selectCharacter}>
+        {characters.map((name) => {
+          return <option key={name} value={name}>{name}</option>;
+        })}
+        </select>
+        <button className={styles.button} onClick={() => {audioPlay(); talkStart()}}>トークを始める</button>
+        </div>
         )}
+        
       {wavReady && (
       <div className={styles.bottom_items}>
        <form onSubmit={onSubmit}>
