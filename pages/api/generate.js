@@ -14,7 +14,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const ecs_url = "http://57.180.92.138:80" //espnetNLBのEIP ecs@aws ElasticIP
+const ecs_url = "http://57.181.129.23:80" //espnetNLBのEIP ecs@aws ElasticIP
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 
 export default async function (req, res) {
@@ -51,6 +51,7 @@ export default async function (req, res) {
       temperature: 0.4,
     });
     const resultString = completion.choices[0].message.content.trim()
+    console.log(resultString)
     //resultStringをsha512でハッシュ化
     const hashString = md5(resultString)
     const id = character + "-" + hashString
@@ -74,7 +75,9 @@ export default async function (req, res) {
       //音声ファイルが存在しないときのみespnet(aws)に送信
       try {
         //ec2とecsの切り替えはここ
+
         const query = ecs_url + "?input=" + resultString + "&hash=" + hashString + "&character=" + character+ "&sca=" + sca
+        console.log(query)
         const response = await axios.get(query);
         //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
         console.log(response.data.wav)

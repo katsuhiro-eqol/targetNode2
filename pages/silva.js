@@ -235,7 +235,7 @@ export default function Silva() {
         }
     })
     const lastImage = imageList.slice(-1)[0]
-    const arr_6 = new Array(12).fill(lastImage)
+    const arr_6 = new Array(18).fill(lastImage)
     //const arr_n3 = new Array(48).fill("Sil_00.jpg")
     imageList = imageList.concat(arr_6)
     //imageList = imageList.concat(arr_n3)
