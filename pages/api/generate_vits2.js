@@ -1,8 +1,7 @@
 //sttsに対応。句読点を除去し、スペースで置き換えた文章を音声合成する
 
 import axios from 'axios';
-import { storage, db } from "../../lib/FirebaseConfig";
-import { ref, getDownloadURL} from "firebase/storage";
+import { db } from "../../lib/FirebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import md5 from 'md5';
 import OpenAI from "openai";
@@ -16,10 +15,11 @@ const openai = new OpenAI({
 });
 
 const local_server = "http://192.168.2.192:3001"
-const ecs_url = "http://52.68.52.228:80" //espnetNLBのEIP ecs@aws ElasticIP
+const ecs_url = "http://13.114.75.20:80" //espnetNLBのEIP ecs@aws ElasticIP
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 //ここ重要。必ずサーバーで直接model_idを確認すること
-const modelId = {bauncer:"1", silva:"0"}
+const modelId = {bauncer:"0", silva:"1"}
+const vits_param = {bauncer: "", silva: "&sdp_ratio=0.3&style_weight=0.1"}
 export default async function (req, res) {
   if (!openai.apiKey) {
     res.status(500).json({
@@ -64,8 +64,8 @@ export default async function (req, res) {
       const data = docSnap.data()
       const keys = Object.keys(data)
       const url = data.url
-      const repeat = data.repeat + 1
-      res.status(200).json({ prompt: userInput, result: resultString, wav: url, repeat: repeat});
+      const repeat = data.repeat
+      res.status(200).json({ prompt: userInput, result: resultString, wavUrl: url, repeat: repeat, id: id});
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
       try {
@@ -73,23 +73,13 @@ export default async function (req, res) {
         
         console.log(audioString)
         console.log(modelId[character])
-        const query = local_server + "/voice?text=" + audioString + "&hash=" + hashString + "&model_id=" + modelId[character]
+        const query = ecs_url  + "/voice?text=" + audioString + "&hash=" + hashString + "&model_id=" + modelId[character] + vits_param[character]
         const response = await axios.get(query);
         //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
         console.log(response.data.wav)
-        const currentWavPath = bucket_path + response.data.wav;//urlを返すようにaws flask側を変更
-        const currentRef = ref(storage, currentWavPath)
-        getDownloadURL(currentRef)
-        .then((url) => {
-          console.log("wavUrl", url)
-          //existingがfalseなのでindexでの保存処理あり
-          res.status(200).json({ prompt: userInput, result: resultString, wav: url, audioString: audioString, hash: hashString, repeat: 1, pronunciation: response.data.pronunciation, frame: response.data.frame});
-        })
-        .catch((error) => {
-          res.status(200).json({ prompt: userInput, result: resultString, wav: error, pronunciation: ""});
-        })
+        res.status(200).json({ prompt: userInput, result: resultString, wav: response.data.wav, wavUrl: "", audioString: audioString, hash: hashString, repeat: 1, pronunciation: response.data.pronunciation, frame: response.data.frame, id: id})
       } catch (error) {
-        res.status(400).json({ prompt: userInput, result: "vits2 serverが起動していません", wav: error, pronunciation: ""});
+        res.status(400).json({ prompt: userInput, result: "vits2 serverが起動していません"});
       }
     }
   } catch(error) {

@@ -19,9 +19,11 @@
   }
 }
 .main .select1 {
-  width: 200px;
+  width: 230px;
   font-size: 20px;
   text-align: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 .main .select2 {
   width: 200px;
@@ -165,6 +167,15 @@
   height: 50px;
   margin-top: 2px;
   font-size: 16px;
+}
+
+.button3 {
+  width: 160px;
+  font-size: 18px;
+  text-align: center;
+  margin-top: 100px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .evaluation {

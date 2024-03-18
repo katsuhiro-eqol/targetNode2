@@ -7,13 +7,15 @@ import Button from '@mui/material/Button';
 import MicIcon from '@mui/icons-material/Mic';
 import SendIcon from '@mui/icons-material/Send';
 import StopIcon from '@mui/icons-material/Stop';
-import { db } from "../lib/FirebaseConfig";
-import { collection, query, where, doc, getDoc, getDocs, setDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
+import { db, storage } from "../lib/FirebaseConfig";
+import { ref, getDownloadURL} from "firebase/storage";
+import { collection, query, where, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
+import { format } from 'data-fns'
 import styles from "./index.module.css";
 
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
-const timestamp = Timestamp.now();
-const today = timestamp.toDate();
+//const timestamp = Timestamp.now();
+//const today = timestamp.toDate();
 
 
 //20240228 定型挨拶およびアニメーションのないバージョン
@@ -39,9 +41,8 @@ export default function VITS2() {
   const audioRef = useRef(null)
   const intervalRef = useRef(null)
   const characters = ["silva", "bauncer"]
-  const scaList = {silva: "1.0", bauncer: "1.0"}
   const selfwords = ["貴方", "あなた", "君"]
-  const user = "tester" //登録情報より取得
+  const user = "user0001" //登録情報より取得
   const {
     transcript,
     listening,
@@ -106,59 +107,53 @@ export default function VITS2() {
       const startTime = new Date().getTime()
       console.log(startTime)
       try {
-        const response = await fetch("/api/generate_vits", {
+        const response = await fetch("/api/generate_vits2", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           //body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, previousData: previousData, sca: scaList[character] }),
-          body: JSON.stringify({ input: userInput, setting: setting, history: refer, character: character, sca: scaList[character]}),
+          body: JSON.stringify({ input: userInput, setting: setting, history: refer, character: character}),
         });
 
         const data = await response.json();
+        if (response.status !== 200) {
+            throw data.error || new Error(`Request failed with status ${response.status}`);
+          }
+
+        if (data.wavUrl == ""){
+            console.log("new data")
+            const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
+            const wavPath = bucket_path + data.wav
+            const currentRef = ref(storage, wavPath)    
+            getDownloadURL(currentRef)
+            .then((url) => {
+                setWavUrl(url)
+                const imageList = createSlides(data.frame)
+                setSlides(imageList)
+                registrationSpeech(data.wav, data.id, data.pronunciation, data.frame, url, data.audioString, data.result)    
+            })
+            .catch((error) => {
+                console.log(error)
+            })
+        } else {
+            setWavUrl(data.wavUrl)
+            const imageList = createSlides(data.frame)
+            setSlides(imageList)
+            updateSpeech(data.id, data.repeat)
+        }
         const responseTime = new Date().getTime()
         console.log(responseTime)
         console.log(responseTime - startTime)
-        if (response.status !== 200) {
-          throw data.error || new Error(`Request failed with status ${response.status}`);
-        }
-        setWavUrl(data.wav);
+
         setResult("・・・")
         setPrompt(data.prompt)
         setTimeout(() => {
           setResult(data.result) 
         }, 3000);
 
-        //アニメーションとConversationData保存を省略する
-        /*
-        const imageList = createBauncerSlides(data.duration, 0.5)
-        setSlides(imageList)
-        const cid = user + "-" + character
-        const convRef = doc(db, "Conversations", cid)
-        const cdata = {
-          character: character,
-          input: data.prompt,
-          output: data.result,
-          date: today
-        }
-        setDoc(convRef, {conversation: arrayUnion(cdata)}, {merge:true}) 
-        */
+        addConversation(data.prompt, data.result)
 
-        const id = character + "-" + data.hash
-        const filename = data.hash + ".wav"
-        const sdata = {
-          filename: filename,
-          output: data.result,
-          modified: data.audioString,
-          url: data.wav,
-          pronunciation: data.pronunciation,
-          updated_at: today,
-          repeat: data.repeat,
-          frame: data.frame
-        }
-        const docRef = doc(db, "SpeechVITS", id);
-        setDoc(docRef, sdata, {merge:true}) 
-        //resultがresetStringだったらhistoryを初期化する
         if (resetString.includes(data.result)){
             setHistory([])
         } else {
@@ -174,132 +169,193 @@ export default function VITS2() {
     }
   }
 
-  const originalInfo = async() => {
-    let charactersData = ""
-    if (character == "silva"){
-      charactersData = "hamefura"
-    } else {
-      charactersData = "アイデアファクトリー"
+  const registrationSpeech = async(wav, id, pronunciation, frame, url, audioString, resultString) => {
+    const fileName = wav.split("/")[2]
+    const today = new Date().toISOString()
+
+    const data = {
+        output: resultString,
+        modified: audioString,
+        repeat: 1,
+        status: "created by server system",
+        updated_at: today,
+        filename: fileName,
+        url: url,
+        frame:frame,
+        pronunciation:pronunciation
+    }
+    const docRef = doc(db, "SpeechVITS", id);
+    await setDoc(docRef, data, {merge:true}) 
     }
 
-    const docRef = doc(db, "OriginalInformation", charactersData);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        const data = docSnap.data()
-        console.log("Document data:", data);
-        const items = Object.keys(data)
-        console.log("items:", items);
-        setItems(items)
-        setInfo(data)
-    } else {
-    console.log("No such document!");
+    const updateSpeech = async(id,repeat) => {
+        const today = new Date().toISOString()
+        const data = {
+            updated_at: today,
+            repeat:repeat+1
+        }
+        const docRef = doc(db, "SpeechVITS", id);
+        await setDoc(docRef, data, {merge:true}) 
     }
-  }
 
-  const greetingInfo = async() => {
-    const docRef = doc(db, "Greeting", character);
-    const docSnap = await getDoc(docRef);
+    const addConversation = async(prompt, result) => {
+        const today = new Date()
+        const todayISO = today.toISOString()
+        const date = todayISO.split("T")[0].replace(/-/g, "")
+        const dateNumber = today.getTime()
 
-    if (docSnap.exists()) {
-        const data = docSnap.data()
-        console.log("Document data:", data);
-        const g = Object.keys(data)
-        console.log(g)
-        setGreetings(g)
-        setGInfo(data)
-    } else {
-    // docSnap.data() will be undefined in this case
-    console.log("No such document!");
+        const cdata = {
+          input: prompt,
+          output: result,
+          date: date,
+          dateNumber: dateNumber
+        }
+        const convRef = doc(db, "Conversations", user, character,todayISO)
+        await setDoc(convRef, cdata)
     }
-  }
 
-  const loadGreetingData = async(text) => {
-    const speechRef = collection(db, "SpeechVITS");
-    const q = query(speechRef, where("output", "==", text));
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-        const data = doc.data()
-
-        const imageList = createSlides(data.frame)
-        setTimeout(() => {
-          setWavUrl(data.url)
-          setSlides(imageList)
-          setResult("・・・")
-        }, 400);
-        setTimeout(() => {
-          setResult(text)
-        }, 3400);
-    });
-  }
-
-
-  const selectCharacter = (e) => {
-    setCharacter(e.target.value);
-    console.log(e.target.value);
-  }
-
-  const createSlides = (frame) => {
-
-    //bauncerの場合だけ点滅アニメーション。0.5秒で点滅。
-    let imageList = []
-    if (character == "bauncer"){
-      const n = Math.floor(frame/44100)+1 //0.5秒
-      for (let i = 0; i<n; i++){
-        const s1 = new Array(2).fill("Kanshi-01.jpg")
-        const s2 = new Array(2).fill("Kanshi-00.jpg")
-        imageList = imageList.concat(s1)
-        imageList = imageList.concat(s2)
-      }
-      const s = new Array(5).fill("Kanshi-00.jpg")
-      imageList = imageList.concat(s)
-    } else {
-      const n = Math.floor(frame/44100)+1 //0.25秒
-      for (let i = 0; i<n; i++){
-        const m = Math.floor(Math.random()*3)
-        imageList = imageList.concat(silvaLists[m])
-      }
-      const s = new Array(10).fill("Sil_00.jpg")
-      imageList = imageList.concat(s)
+    /*
+    const getEmbedding = async(prompt, result) => {
+        const conversation = "user:" + prompt + ",assistant:" + result
+        const response = await fetch("/api/embedding", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({conversation:conversation}),
+          });
+          const data2 = await response.json();
+          const embedding = data2.embedding
+          return embedding
     }
-    return imageList
-  }
+    */
+
+    const originalInfo = async() => {
+        let charactersData = ""
+        if (character == "silva"){
+        charactersData = "hamefura"
+        } else {
+        charactersData = "アイデアファクトリー"
+        }
+
+        const docRef = doc(db, "OriginalInformation", charactersData);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data()
+            console.log("Document data:", data);
+            const items = Object.keys(data)
+            console.log("items:", items);
+            setItems(items)
+            setInfo(data)
+        } else {
+        console.log("No such document!");
+        }
+    }
+
+    const greetingInfo = async() => {
+        const docRef = doc(db, "Greeting", character);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data()
+            console.log("Document data:", data);
+            const g = Object.keys(data)
+            console.log(g)
+            setGreetings(g)
+            setGInfo(data)
+        } else {
+        // docSnap.data() will be undefined in this case
+        console.log("No such document!");
+        }
+    }
+
+    const loadGreetingData = async(text) => {
+        const speechRef = collection(db, "SpeechVITS");
+        const q = query(speechRef, where("output", "==", text));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            const data = doc.data()
+
+            const imageList = createSlides(data.frame)
+            setTimeout(() => {
+            setWavUrl(data.url)
+            setSlides(imageList)
+            setResult("・・・")
+            }, 400);
+            setTimeout(() => {
+            setResult(text)
+            }, 3400);
+        });
+    }
 
 
-  const talkStart = async () => {
-  //暫定的にESPnetが立ち上がってなくても使えるようにする
-  setWavReady(true)
-  sttStart()
-  setTimeout(() => {
-      sttStop()
-      resetTranscript()
-  }, 1000);
-  }
+    const selectCharacter = (e) => {
+        setCharacter(e.target.value);
+        console.log(e.target.value);
+    }
 
-  const audioPlay = () => {
-    audioRef.current.play()
-    setCurrentIndex(0)
-  }
+    const createSlides = (frame) => {
 
-  const sttStart = () => {
-    setUserInput("")
-    setRecord(true)
-    SpeechRecognition.startListening()
-  }
+        //bauncerの場合だけ点滅アニメーション。0.5秒で点滅。
+        let imageList = []
+        if (character == "bauncer"){
+        const n = Math.floor(frame/44100)+1 //0.5秒
+        for (let i = 0; i<n; i++){
+            const s1 = new Array(2).fill("Kanshi-01.jpg")
+            const s2 = new Array(2).fill("Kanshi-00.jpg")
+            imageList = imageList.concat(s1)
+            imageList = imageList.concat(s2)
+        }
+        const s = new Array(10).fill("Kanshi-00.jpg")
+        imageList = imageList.concat(s)
+        } else {
+        const n = Math.floor(frame/44100)+1 //0.25秒
+        for (let i = 0; i<n; i++){
+            const m = Math.floor(Math.random()*3)
+            imageList = imageList.concat(silvaLists[m])
+        }
+        const s = new Array(15).fill("Sil_00.jpg")
+        imageList = imageList.concat(s)
+        }
+        return imageList
+    }
 
-  const sttStop = () => {
-    setRecord(false)
-    SpeechRecognition.stopListening()
-  }
 
-  useEffect(() => {
-    originalInfo()
-    greetingInfo()
-    return () => {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
+    const talkStart = async () => {
+    //暫定的にESPnetが立ち上がってなくても使えるようにする
+    setWavReady(true)
+    sttStart()
+    setTimeout(() => {
+        sttStop()
         resetTranscript()
-    };
-  },[])
+    }, 1000);
+    }
+
+    const audioPlay = () => {
+        audioRef.current.play()
+        setCurrentIndex(0)
+    }
+
+    const sttStart = () => {
+        setUserInput("")
+        setRecord(true)
+        SpeechRecognition.startListening()
+    }
+
+    const sttStop = () => {
+        setRecord(false)
+        SpeechRecognition.stopListening()
+    }
+
+    useEffect(() => {
+        originalInfo()
+        greetingInfo()
+        return () => {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
+            resetTranscript()
+        };
+    },[])
 
   useEffect(() => {
     greetingInfo()

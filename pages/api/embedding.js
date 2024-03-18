@@ -8,14 +8,16 @@ const openai = new OpenAI({
 export default async function (req, res) {
     const conversation = req.body.conversation
     try {
-        const embedding = await openai.embeddings.create({
+        const response = await openai.embeddings.create({
             model: "text-embedding-ada-002",
             input: conversation,
             encoding_format: "float",
         });
-        const embeddings = embedding.data.embedding
-        res.status(200).json({embedding:embeddings})
+        const embedding = response.data[0].embedding
+        console.log(embedding)
+        res.status(200).json({embedding:"success"})
     } catch (error) {
-        console.log("embedding error")
+        //res.status(400).json({embedding:error})
+        console.log(error)
     }
 }
