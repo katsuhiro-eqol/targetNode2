@@ -73,7 +73,7 @@ export default async function (req, res) {
         
         console.log(audioString)
         console.log(modelId[character])
-        const query = ecs_url  + "/voice?text=" + audioString + "&hash=" + hashString + "&model_id=" + modelId[character] + vits_param[character]
+        const query = ecs_url + "/voice?text=" + audioString + "&hash=" + hashString + "&model_id=" + modelId[character] + vits_param[character]
         const response = await axios.get(query);
         //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
         console.log(response.data.wav)
