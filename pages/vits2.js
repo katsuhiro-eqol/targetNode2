@@ -306,7 +306,7 @@ export default function VITS2() {
             imageList = imageList.concat(s1)
             imageList = imageList.concat(s2)
         }
-        const s = new Array(15).fill("Kanshi-00.jpg")
+        const s = new Array(1).fill("Kanshi-00.jpg")
         imageList = imageList.concat(s)
         } else {
         const n = Math.floor(frame/44100)+1 //0.25秒
@@ -314,7 +314,7 @@ export default function VITS2() {
             const m = Math.floor(Math.random()*3)
             imageList = imageList.concat(silvaLists[m])
         }
-        const s = new Array(20).fill("Sil_00.jpg")
+        const s = new Array(1).fill("Sil_00.jpg")
         imageList = imageList.concat(s)
         }
         return imageList
@@ -388,8 +388,10 @@ export default function VITS2() {
       })
       */
     } else {
+    /*
       clearInterval(intervalRef.current);
       intervalRef.current = null
+    */
     }   
   }, [wavUrl])
 
@@ -417,12 +419,18 @@ export default function VITS2() {
   if (currentIndex === slides.length-2){
     if (character == "silva"){
       const s = new Array(1).fill("Sil_00.jpg")
+      setCurrentIndex(0)
       setSlides(s)
-      setWavUrl("")
+      clearInterval(intervalRef.current);
+      intervalRef.current = null
+      //setWavUrl("")
     } else {
       const s = new Array(1).fill("Kanshi-00.jpg")
+      setCurrentIndex(0)
       setSlides(s)
-      setWavUrl("")
+      clearInterval(intervalRef.current);
+      intervalRef.current = null
+      //setWavUrl("")
     }
     setCurrentIndex(0)
   }
