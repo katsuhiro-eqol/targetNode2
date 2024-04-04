@@ -15,7 +15,7 @@ const openai = new OpenAI({
 });
 
 const local_server = "http://192.168.2.192:3001"
-const ecs_url = "http://13.114.75.20:80" //espnetNLBのEIP ecs@aws ElasticIP
+const ecs_url = "http://54.95.88.73:80" //espnetNLBのEIP ecs@aws ElasticIP
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 //ここ重要。必ずサーバーで直接model_idを確認すること
 const modelId = {bauncer:"0", silva:"1"}
@@ -74,6 +74,7 @@ export default async function (req, res) {
         console.log(audioString)
         console.log(modelId[character])
         const query = ecs_url + "/voice?text=" + audioString + "&hash=" + hashString + "&model_id=" + modelId[character] + vits_param[character]
+        console.log(query)
         const response = await axios.get(query);
         //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
         console.log(response.data.wav)
