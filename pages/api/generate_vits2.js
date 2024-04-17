@@ -15,7 +15,7 @@ const openai = new OpenAI({
 });
 
 const local_server = "http://192.168.2.192:3001"
-const ecs_url = "http://54.95.88.73:80" //espnetNLBのEIP ecs@aws ElasticIP
+const ecs_url = "http://54.168.103.210:80" //espnetNLBのEIP ecs@aws ElasticIP
 const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
 //ここ重要。必ずサーバーで直接model_idを確認すること
 const modelId = {bauncer:"0", silva:"1"}
