@@ -116,6 +116,8 @@ export default function Index2() {
     const audio_data = await audio.json();
 
     if (audio_data.audioContent) {
+      console.log(typeof(audio_data.audioContent))
+      console.log(audio_data.audioContent)
       const audioBlob = base64ToBlob(audio_data.audioContent, 'audio/mp3');
       const audioUrl = URL.createObjectURL(audioBlob);
       setWavUrl(audioUrl);
