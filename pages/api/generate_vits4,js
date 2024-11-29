@@ -1,6 +1,3 @@
-//sttsに対応。句読点を除去し、スペースで置き換えた文章を音声合成する
-//vits2
-
 import axios from 'axios';
 import { db } from "../../lib/FirebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
@@ -15,12 +12,23 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const local_server = "http://192.168.2.192:3001"
-const ecs_url = "http://54.168.103.210:80" //espnetNLBのEIP ecs@aws ElasticIP
-const bucket_path = "gs://targetproject-394500.appspot.com/" //cloud storage bucket
+const runpod_key = process.env.RUNPOD_API_KEY
+
+const runpod_url = "https://api.runpod.ai/v2/ipv7b7lbrstx3n/runsync"
 //ここ重要。必ずサーバーで直接model_idを確認すること
 const modelId = {bauncer:"0", silva:"1"}
-const vits_param = {bauncer: "", silva: "&sdp_ratio=0.3&style_weight=0.1"}
+const vits_param = {
+    bauncer: {
+        model_id: 0,
+        sdp_ratio:0.2,
+        style_weight:5.0},
+    silva: {
+        model_id: 1,
+        sdp_ratio:0.2,
+        style_weight:5.0
+    }
+}
+
 export default async function (req, res) {
   if (!openai.apiKey) {
     res.status(500).json({
@@ -65,23 +73,32 @@ export default async function (req, res) {
       const data = docSnap.data()
       const keys = Object.keys(data)
       const url = data.url
-      const repeat = data.repeat + 1
-      res.status(200).json({ prompt: userInput, result: resultString, wavUrl: url, repeat: repeat, id: id, frame:data.frame});
+      const repeat = data.repeat
+      res.status(200).json({ prompt: userInput, result: resultString, wavUrl: url, repeat: repeat, id: id, frame: data.frame});
     } else {
       //音声ファイルが存在しないときのみespnet(aws)に送信
       try {
-        //ec2とecsの切り替えはここ
+        const headers = {
+            "Content-Type": "applicatiion/json",
+            "Authorization": runpod_key
+        }
+        const data = {
+            input: {
+                action: "/voice",
+                model_id: vits_param[character]["model_id"],
+                sdp_ratio: vits_param[character]["sdp_ratio"],
+                style_weight: vits_param[character]["style_weight"],
+                text: audioString
+            }
+        }
+        //const query = ecs_url + "/voice?text=" + audioString + "&hash=" + hashString + "&model_id=" + modelId[character] + vits_param[character]
+        console.log(data)
+        console.log(headers)
+        const response = await axios.post(runpod_url, data, {headers:headers});
         
-        console.log(audioString)
-        console.log(modelId[character])
-        const query = ecs_url + "/voice?text=" + audioString + "&hash=" + hashString + "&model_id=" + modelId[character] + vits_param[character]
-        console.log(query)
-        const response = await axios.get(query);
-        //ここ修正必要　生成したwavファイルのurlを取得してsetWavFile
-        console.log(response.data.wav)
-        res.status(200).json({ prompt: userInput, result: resultString, wav: response.data.wav, wavUrl: "", audioString: audioString, hash: hashString, repeat: 1, pronunciation: response.data.pronunciation, frame: response.data.frame, id: id})
+        res.status(200).json({ prompt: userInput, result: resultString, audioContent: response.data.output.voice, wavUrl: "", audioString: audioString, hash: hashString, repeat: 1, id: id})
       } catch (error) {
-        res.status(400).json({ prompt: userInput, result: "vits2 serverが起動していません"});
+        res.status(400).json({ prompt: userInput, result: "runpod_vits2 serverが起動していません"});
       }
     }
   } catch(error) {

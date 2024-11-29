@@ -1,3 +1,7 @@
+//VITS対応 api/generate_vits
+//アニメーションは音声時間に合わせてランダム表示
+
+
 import "regenerator-runtime";
 import React from "react";
 import Head from "next/head";
