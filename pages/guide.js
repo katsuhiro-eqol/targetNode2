@@ -9,7 +9,6 @@ import Button from '@mui/material/Button';
 import MicIcon from '@mui/icons-material/Mic';
 import SendIcon from '@mui/icons-material/Send';
 import StopIcon from '@mui/icons-material/Stop';
-import ChatUI from "./components/chat";
 import { db } from "../lib/FirebaseConfig";
 import { collection, query, where, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import styles from "./guide.module.css";
