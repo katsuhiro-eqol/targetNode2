@@ -41,6 +41,7 @@ export default function Guide() {
     const searchParams = useSearchParams();
     const attribute = searchParams.get("attribute");
     const modelnumber = searchParams.get("modelnumber");
+    const user = searchParams.get("user");
     let n = 0
     async function onSubmit(event) {
         event.preventDefault();
@@ -48,6 +49,8 @@ export default function Guide() {
         setRecord(false)
         setCanSend(false)//同じInputで繰り返し送れないようにする
         setUserInput("")
+        const s1 = new Array(1).fill("00_talk01.jpg")
+        setSlides(s1)
         n = histories.length
         updateHistories({id:String(n), content:userInput, role:"user"})
         try {
@@ -171,6 +174,16 @@ export default function Guide() {
         return imageList
     }
 
+    const userConformation = () => {
+        if (user == "abcd" || user == "target"){
+            talkStart()
+            audioPlay()
+            loadEmbeddingData(attribute)
+        } else {
+            alert("アプリを利用できません")
+        }
+    }
+
     const talkStart = async () => {
     //暫定的にESPnetが立ち上がってなくても使えるようにする
     setWavReady(true)
@@ -276,7 +289,7 @@ export default function Guide() {
       </div>
       ) : (
         <div className={styles.image_container}>
-        <button className={styles.button3} onClick={() => {audioPlay(); talkStart(); loadEmbeddingData(attribute)}}>AIガイドを始める</button>
+        <button className={styles.button3} onClick={() => userConformation()}>AIガイドを始める</button>
         </div>
         )}
     </main>
