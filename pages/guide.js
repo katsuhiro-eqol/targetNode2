@@ -161,7 +161,7 @@ export default function Guide() {
 
     const createSlides = (duration) => {
         let imageList = []
-        const n = Math.floor(duration)+1
+        const n = Math.floor(duration*2)+1
         for (let i = 0; i<n; i++){
             const s1 = new Array(1).fill("00_talk01.jpg")
             const s2 = new Array(1).fill("00_base.jpg")
@@ -239,7 +239,7 @@ export default function Guide() {
         //intervalはcreateBauncerSlides()に合わせる
         intervalRef.current = setInterval(() => {
             setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
-        }, 500)
+        }, 250)
 
         } else {
 
