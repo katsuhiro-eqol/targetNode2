@@ -42,6 +42,8 @@ export default function Guide() {
     const attribute = searchParams.get("attribute");
     const modelnumber = searchParams.get("modelnumber");
     const user = searchParams.get("user");
+
+    const contractedUsers = [{name:"target", limit:"no"}, {name:"abcdefg", limit:"2024/12/15"}]
     let n = 0
     async function onSubmit(event) {
         event.preventDefault();
@@ -175,13 +177,38 @@ export default function Guide() {
     }
 
     const userConformation = () => {
-        if (user == "abcd" || user == "target"){
+        const currentUser = contractedUsers.filter((item) => item.name == user)
+        if (currentUser.length != 0) {
+            const limit = currentUser[0].limit
+            if (limit == "no"){
+                talkStart()
+                audioPlay()
+                loadEmbeddingData(attribute)
+            } else {
+                const today = new Date()
+                const limitDate = limit.split("/")
+                if (limitDate[0]==today.getFullYear()&&limitDate[1]==(today.getMonth()+1)&&limitDate[2]==today.getDate()){
+                    talkStart()
+                    audioPlay()
+                    loadEmbeddingData(attribute)                    
+                } else {
+                    alert("アプリの使用権限がありません")
+                }
+            }
+        } else {
+            alert("アプリの使用権限がありません")
+        }
+        /*
+        if (user == "target"){
             talkStart()
             audioPlay()
             loadEmbeddingData(attribute)
+        } else if (user == "abcdefg") {
+            alert("現在アプリを利用できません")
         } else {
-            alert("アプリを利用できません")
+            alert("アプリの使用権限がありません")
         }
+        */
     }
 
     const talkStart = async () => {
