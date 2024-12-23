@@ -43,7 +43,7 @@ export default function Guide() {
     const modelnumber = searchParams.get("modelnumber");
     const user = searchParams.get("user");
 
-    const contractedUsers = [{name:"target", limit:"no"}, {name:"abcdefg", limit:"2024-12-23T17:00:00 to 2024-12-23T21:00:00"}]
+    const contractedUsers = [{name:"target", limit:"no"}, {name:"abcdefg", limit:"2024-12-23T17:00:00 to 2024-12-23T22:00:00"}]
     async function onSubmit(event) {
         event.preventDefault();
         const today = new Date()
