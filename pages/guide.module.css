@@ -113,8 +113,23 @@
     background-color: #ffffff;
     border: 1px solid #e0e0e0;
   }
+  .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;  /* 要素間の間隔 */
+  }
+  .spacel {
+    margin-top: 200px;
+  }
+  .spacem {
+    margin-top: 100px;
+  }
+  .spaces {
+    margin-top: 50px;
+  }
 .select {
-    font-size: 20px;
+    font-size: 16px;
     text-align: center;
     margin-left: auto;
     margin-right: auto;

@@ -15,7 +15,7 @@ import styles from "./guide.module.css";
 
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
 
-export default function Guide() {
+export default function Guide2() {
     const initialSlides = new Array(1).fill("00_base.jpg")
     const [userInput, setUserInput] = useState("")
     const [prompt, setPrompt] = useState("")
@@ -29,6 +29,7 @@ export default function Guide() {
     const [record,setRecord] = useState(false)
     const [canSend, setCanSend] = useState(false)
     const [endLimit, setEndLimit] = useState(1767193199000) //2025-12-31
+    const [language, setLanguage] = useState("")
     const audioRef = useRef(null)
     const intervalRef = useRef(null)
     const {
@@ -38,12 +39,13 @@ export default function Guide() {
         browserSupportsSpeechRecognition
     } = useSpeechRecognition();
 
+    const languages = ["", "Japanese", "English", "Chinese", "Korean", "Spanish"]
     const searchParams = useSearchParams();
     const attribute = searchParams.get("attribute");
     const modelnumber = searchParams.get("modelnumber");
     const user = searchParams.get("user");
 
-    const contractedUsers = [{name:"target", limit:"no"}, {name:"abcdefg", limit:"2024-12-23T17:00:00 to 2024-12-23T21:00:00"}]
+    const contractedUsers = [{name:"target", limit:"no"}, {name:"abcdefg", limit:"2024-12-18T14:00:00 to 2025-12-31T23:59:59"}]
     async function onSubmit(event) {
         event.preventDefault();
         const today = new Date()
@@ -61,19 +63,22 @@ export default function Guide() {
         setSlides(s1)
 
         try {
-        const response = await fetch("/api/embedding", {
+        const response = await fetch("/api/translate", {
             method: "POST",
             headers: {
             "Content-Type": "application/json",
             },
             //body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, previousData: previousData, sca: scaList[character] }),
-            body: JSON.stringify({ input: userInput, attribute:attribute, modelnumber:modelnumber }),
+            body: JSON.stringify({ input: userInput, attribute:attribute, modelnumber:modelnumber, targetLanguage:"en" }),
         });
 
         const data = await response.json();
         if (response.status !== 200) {
             throw data.error || new Error(`Request failed with status ${response.status}`);
             }
+        setResult(data.forign)
+        setPrompt(data.prompt)
+        /*
         setPrompt(data.prompt)
         const similarityList = findMostSimilarQuestion(data.embedding)
 
@@ -94,7 +99,7 @@ export default function Guide() {
 
         console.log(similarityList.similarity)
         console.log(embeddingsData[similarityList.index])
-
+        */
         } catch(error) {
         console.error(error);
         alert(error.message);
@@ -194,11 +199,12 @@ export default function Guide() {
                 const limitDate = limit.split(" to ")
                 const startTime = new Date(limitDate[0])
                 const endTime = new Date(limitDate[1])
+                console.log(endTime.getTime())
                 if (today.getTime() > startTime.getTime() && today.getTime() < endTime.getTime()){
                     talkStart()
                     audioPlay()
-                    loadEmbeddingData(attribute)                 
-                    setEndLimit(endTime.getTime())  
+                    loadEmbeddingData(attribute)         
+                    setEndLimit(endTime.getTime())          
                 } else {
                     alert("アプリの使用権限がありません")
                 }
@@ -232,6 +238,11 @@ export default function Guide() {
     const sttStop = () => {
         setRecord(false)
         SpeechRecognition.stopListening()
+    }
+
+    const selectLanguage = (e) => {
+        setLanguage(e.target.value);
+        console.log(e.target.value);
     }
 
     useEffect(() => {
@@ -312,8 +323,20 @@ export default function Guide() {
       <div className={styles.none}>{currentIndex}</div>
       </div>
       ) : (
-        <div className={styles.image_container}>
-        <button className={styles.button3} onClick={() => userConformation()}>AIガイドを始める</button>
+        <div className={styles.spacem}>
+        <div className={styles.container}>
+        <Button className={styles.button3} variant="outlined" onClick={() => userConformation()}>AIガイドを始める</Button>
+        </div>
+        <div className={styles.spacel}>
+        <div className={styles.container}>
+        <div className={styles.lang}>Language</div>
+        <select className={styles.select} value={language} label="character" onChange={selectLanguage}>
+        {languages.map((l) => {
+            return <option key={l} value={l}>{l}</option>;
+        })}
+        </select>
+        </div>
+        </div>
         </div>
         )}
     </main>

@@ -1,7 +1,4 @@
 import OpenAI from "openai";
-import { db } from "../../lib/FirebaseConfig";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import base64 from 'base64-js';
 
 //openai@4.7.0での記載方法
 const openai = new OpenAI({
