@@ -43,7 +43,6 @@ export default function Guide() {
     const modelnumber = searchParams.get("modelnumber");
     const user = searchParams.get("user");
 
-    const contractedUsers = [{name:"target", limit:"no"}, {name:"abcdefg", limit:"2024-12-23T17:00:00 to 2024-12-23T22:00:00"}]
     async function onSubmit(event) {
         event.preventDefault();
         const today = new Date()
@@ -181,30 +180,37 @@ export default function Guide() {
         return imageList
     }
 
-    const userConformation = () => {
-        const currentUser = contractedUsers.filter((item) => item.name == user)
-        if (currentUser.length != 0) {
-            const limit = currentUser[0].limit
+    async function userConformation(userId){
+        const userRef = doc(db, "Users", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const data = userSnap.data()
+            const limit = data.limit
             if (limit == "no"){
                 talkStart()
                 audioPlay()
                 loadEmbeddingData(attribute)
             } else {
-                const today = new Date()
-                const limitDate = limit.split(" to ")
-                const startTime = new Date(limitDate[0])
-                const endTime = new Date(limitDate[1])
-                if (today.getTime() > startTime.getTime() && today.getTime() < endTime.getTime()){
+                limit.sort((a,b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+                const now = new Date()
+
+                const currentIndex = limit.findIndex((item) => new Date(item.start).getTime() <= now.getTime() && new Date(item.end).getTime() >= now.getTime())
+                console.log("sorted data:", limit)
+                console.log("currentIndex:", currentIndex)
+                console.log("currentLimitation",limit[currentIndex])
+                if (currentIndex == -1){
+                    alert("利用可能期間ではありません")
+                } else {
+                    const endTime = limit[currentIndex].end
                     talkStart()
                     audioPlay()
-                    loadEmbeddingData(attribute)                 
-                    setEndLimit(endTime.getTime())  
-                } else {
-                    alert("アプリの使用権限がありません")
+                    loadEmbeddingData(attribute)            
+                    setEndLimit(new Date(endTime).getTime())  
                 }
             }
         } else {
-            alert("アプリの使用権限がありません")
+            alert("ユーザー登録されていません")
         }
     }
 
@@ -235,7 +241,7 @@ export default function Guide() {
     }
 
     useEffect(() => {
-
+        //loadUserInformation(user)
         return () => {
             clearInterval(intervalRef.current);
             intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
@@ -313,7 +319,7 @@ export default function Guide() {
       </div>
       ) : (
         <div className={styles.image_container}>
-        <button className={styles.button3} onClick={() => userConformation()}>AIガイドを始める</button>
+        <button className={styles.button3} onClick={() => userConformation(user)}>AIガイドを始める</button>
         </div>
         )}
     </main>
@@ -352,22 +358,3 @@ export default function Guide() {
     </div>
   );
 }
-
-/*
-                if (limitDate[0]==today.getFullYear()&&limitDate[1]==(today.getMonth()+1)&&limitDate[2]==today.getDate()){
-                    talkStart()
-                    audioPlay()
-                    loadEmbeddingData(attribute)                    
-                } else {
-                    alert("アプリの使用権限がありません")
-                }
-
-        <div className={styles.messageContainer}>
-            <div className={styles.userMessage}>
-                {prompt}
-            </div>
-            <div className={styles.aiMessage}>
-                {result}
-            </div>
-        </div>
-*/

@@ -19,8 +19,8 @@ const today = timestamp.toDate();
 const ttsApiKey = process.env.NEXT_PUBLIC_GOOGLE_TTS_API_KEY
 
 export default function Index2() {
-  const initialSlides = new Array(1).fill("Sil_00.jpg")
-  const slideOption = ["Sil_00.jpg","Sil_01-A.jpg","Sil_02-I.jpg","Sil_03-U-O.jpg","Sil_04-E.jpg","Sil_03-U-O.jpg"]
+  const initialSlides = new Array(1).fill("Kanshi-00.jpg")
+  //const slideOption = ["Sil_00.jpg","Sil_01-A.jpg","Sil_02-I.jpg","Sil_03-U-O.jpg","Sil_04-E.jpg","Sil_03-U-O.jpg"]
   const [user, setUser] = useState("user1")
   const [userInput, setUserInput] = useState("")
   const [prompt, setPrompt] = useState("")
@@ -140,12 +140,27 @@ export default function Index2() {
   
       const byteArray = new Uint8Array(byteNumbers);
       byteArrays.push(byteArray);
+      console.log(byteArrays.length)
     }
   
     const blob = new Blob(byteArrays, { type: contentType });
     return blob;
   }
   
+  const createSlides = (duration) => {
+    let imageList = []
+    const n = Math.floor(duration*2)+1
+    for (let i = 0; i<n; i++){
+        const s1 = new Array(1).fill("Kanshi-01.jpg")
+        const s2 = new Array(1).fill("Kanshi-00.jpg")
+        imageList = imageList.concat(s1)
+        imageList = imageList.concat(s2)
+    }
+    const s = new Array(1).fill("Kanshi.jpg")
+    imageList = imageList.concat(s)
+
+    return imageList
+}
   const prepareSlides = (duration) => {
     const slideCount = Math.round(duration / 0.2)
     const arr0 = new Array(5).fill("Sil_00.jpg")
@@ -180,7 +195,7 @@ const selectYourLanguage = (e) => {
 
   const audioAndSlidePlay = () => {
     audioRef.current.play().then(() => {
-        setSlides(prepareSlides(audioRef.current.duration))
+        setSlides(createSlides(audioRef.current.duration))
         console.log(audioRef.current.duration)
     })
   }
@@ -217,7 +232,7 @@ const selectYourLanguage = (e) => {
       }
       intervalRef.current = setInterval(() => {
           setCurrentIndex((prevIndex) => (prevIndex + 1) % (slides.length))
-      }, 200)
+      }, 250)
     } else {
       clearInterval(intervalRef.current);
       intervalRef.current = null
@@ -257,7 +272,7 @@ const selectYourLanguage = (e) => {
       <div className={styles.image_container}>
       <img className={styles.anime} src={slides[currentIndex]} alt="Image" />
       <div className={styles.output} onClick={() => {audioAndSlidePlay()}}>{result}</div>
-      <div className={styles.none}>{currentIndex}</div>
+      <div className={styles.output}>{currentIndex}</div>
       </div>
       ) : (
         <div className={styles.image_container}>

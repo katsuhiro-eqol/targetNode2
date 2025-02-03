@@ -15,7 +15,7 @@ import styles from "./guide.module.css";
 
 const no_sound = "https://firebasestorage.googleapis.com/v0/b/targetproject-394500.appspot.com/o/setto%2Fno_sound.mp3?alt=media&token=99787bd0-3edc-4f9a-9521-0b73ad65eb0a"
 
-export default function Guide2() {
+export default function Guide() {
     const initialSlides = new Array(1).fill("00_base.jpg")
     const [userInput, setUserInput] = useState("")
     const [prompt, setPrompt] = useState("")
@@ -29,7 +29,6 @@ export default function Guide2() {
     const [record,setRecord] = useState(false)
     const [canSend, setCanSend] = useState(false)
     const [endLimit, setEndLimit] = useState(1767193199000) //2025-12-31
-    const [language, setLanguage] = useState("")
     const audioRef = useRef(null)
     const intervalRef = useRef(null)
     const {
@@ -39,13 +38,12 @@ export default function Guide2() {
         browserSupportsSpeechRecognition
     } = useSpeechRecognition();
 
-    const languages = ["", "Japanese", "English", "Chinese", "Korean", "Spanish"]
     const searchParams = useSearchParams();
     const attribute = searchParams.get("attribute");
     const modelnumber = searchParams.get("modelnumber");
     const user = searchParams.get("user");
 
-    const contractedUsers = [{name:"target", limit:"no"}, {name:"abcdefg", limit:"2024-12-18T14:00:00 to 2025-12-31T23:59:59"}]
+    const contractedUsers = [{name:"target", limit:"no"}, {name:"abcdefg", limit:"2024-12-23T17:00:00 to 2024-12-23T22:00:00"}]
     async function onSubmit(event) {
         event.preventDefault();
         const today = new Date()
@@ -63,22 +61,19 @@ export default function Guide2() {
         setSlides(s1)
 
         try {
-        const response = await fetch("/api/translate", {
+        const response = await fetch("/api/embedding", {
             method: "POST",
             headers: {
             "Content-Type": "application/json",
             },
             //body: JSON.stringify({ input: userInput, character: character, fewShot: fewShot, previousData: previousData, sca: scaList[character] }),
-            body: JSON.stringify({ input: userInput, attribute:attribute, modelnumber:modelnumber, targetLanguage:"en" }),
+            body: JSON.stringify({ input: userInput, attribute:attribute, modelnumber:modelnumber }),
         });
 
         const data = await response.json();
         if (response.status !== 200) {
             throw data.error || new Error(`Request failed with status ${response.status}`);
             }
-        setResult(data.forign)
-        setPrompt(data.prompt)
-        /*
         setPrompt(data.prompt)
         const similarityList = findMostSimilarQuestion(data.embedding)
 
@@ -99,7 +94,7 @@ export default function Guide2() {
 
         console.log(similarityList.similarity)
         console.log(embeddingsData[similarityList.index])
-        */
+
         } catch(error) {
         console.error(error);
         alert(error.message);
@@ -186,7 +181,38 @@ export default function Guide2() {
         return imageList
     }
 
-    const userConformation = () => {
+    async function userConformation(userId){
+        const userRef = doc(db, "Users", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const data = userSnap.data()
+            const limit = data.limit
+            if (limit == "no"){
+                talkStart()
+                audioPlay()
+                loadEmbeddingData(attribute)
+            } else {
+                limit.sort((a,b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+                const now = new Date()
+                const currentIndex = limit.findIndex((item) => new Date(item.start).getTime() <= now.getTime() && new Date(item.end).getTime() >= now.getTime())
+                console.log("sorted data:", limit)
+                console.log("currentIndex:", currentIndex)
+                console.log("currentLimitation",limit[currentIndex])
+                if (currentIndex == -1){
+                    alert("利用可能期間ではありません")
+                } else {
+                    const endTime = limit[currentIndex].end
+                    talkStart()
+                    audioPlay()
+                    loadEmbeddingData(attribute)                 
+                    setEndLimit(endTime.getTime())  
+                }
+            }
+        } else {
+            alert("ユーザー登録されていません")
+        }
+        /* 
         const currentUser = contractedUsers.filter((item) => item.name == user)
         if (currentUser.length != 0) {
             const limit = currentUser[0].limit
@@ -199,12 +225,11 @@ export default function Guide2() {
                 const limitDate = limit.split(" to ")
                 const startTime = new Date(limitDate[0])
                 const endTime = new Date(limitDate[1])
-                console.log(endTime.getTime())
                 if (today.getTime() > startTime.getTime() && today.getTime() < endTime.getTime()){
                     talkStart()
                     audioPlay()
-                    loadEmbeddingData(attribute)         
-                    setEndLimit(endTime.getTime())          
+                    loadEmbeddingData(attribute)                 
+                    setEndLimit(endTime.getTime())  
                 } else {
                     alert("アプリの使用権限がありません")
                 }
@@ -212,6 +237,7 @@ export default function Guide2() {
         } else {
             alert("アプリの使用権限がありません")
         }
+        */
     }
 
     const talkStart = async () => {
@@ -240,13 +266,8 @@ export default function Guide2() {
         SpeechRecognition.stopListening()
     }
 
-    const selectLanguage = (e) => {
-        setLanguage(e.target.value);
-        console.log(e.target.value);
-    }
-
     useEffect(() => {
-
+        //loadUserInformation(user)
         return () => {
             clearInterval(intervalRef.current);
             intervalRef.current = null// コンポーネントがアンマウントされたらタイマーをクリア
@@ -323,20 +344,8 @@ export default function Guide2() {
       <div className={styles.none}>{currentIndex}</div>
       </div>
       ) : (
-        <div className={styles.spacem}>
-        <div className={styles.container}>
-        <Button className={styles.button3} variant="outlined" onClick={() => userConformation()}>AIガイドを始める</Button>
-        </div>
-        <div className={styles.spacel}>
-        <div className={styles.container}>
-        <div className={styles.lang}>Language</div>
-        <select className={styles.select} value={language} label="character" onChange={selectLanguage}>
-        {languages.map((l) => {
-            return <option key={l} value={l}>{l}</option>;
-        })}
-        </select>
-        </div>
-        </div>
+        <div className={styles.image_container}>
+        <button className={styles.button3} onClick={() => userConformation(user)}>AIガイドを始める</button>
         </div>
         )}
     </main>
@@ -375,22 +384,3 @@ export default function Guide2() {
     </div>
   );
 }
-
-/*
-                if (limitDate[0]==today.getFullYear()&&limitDate[1]==(today.getMonth()+1)&&limitDate[2]==today.getDate()){
-                    talkStart()
-                    audioPlay()
-                    loadEmbeddingData(attribute)                    
-                } else {
-                    alert("アプリの使用権限がありません")
-                }
-
-        <div className={styles.messageContainer}>
-            <div className={styles.userMessage}>
-                {prompt}
-            </div>
-            <div className={styles.aiMessage}>
-                {result}
-            </div>
-        </div>
-*/
